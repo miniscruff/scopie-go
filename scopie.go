@@ -9,6 +9,7 @@ import (
 const (
 	BlockSeperator = "/"
 	ScopeSeperator = ","
+	ArraySeperator = "|"
 )
 
 type Result string
@@ -38,12 +39,25 @@ func Process(actorScopes, requiredRules string) (Result, error) {
 
 	// do this the simplest way for now, efficiency can come later...
 	hasBeenAllowed := false
-	logger.Info("processing scopes")
+	logger.Debug("processing scopes")
 
-	for _, actorScope := range strings.Split(actorScopes, ScopeSeperator) {
+	actorScopesSplit := strings.Split(actorScopes, ScopeSeperator)
+	actorScopesSplitExpanded := make([]string, 0)
+	for _, actorScope := range actorScopesSplit {
+		actorScopesSplitExpanded = append(actorScopesSplitExpanded, expandVars(actorScope)...)
+	}
+
+	logger.Debug("expanded scopes", "expanded", actorScopesSplitExpanded)
+
+	for _, actorScope := range actorScopesSplitExpanded {
 		actorSplit := strings.Split(actorScope, BlockSeperator)
 		actorScopes := actorSplit[1:]
 		rule := actorSplit[0]
+
+		// we can skip this allow rule since we were already approved
+		if hasBeenAllowed && rule == string(ResultAllow) {
+			continue
+		}
 
 		for _, requiredRule := range strings.Split(requiredRules, ScopeSeperator) {
 			ruleScopes := strings.Split(requiredRule, BlockSeperator)
@@ -84,4 +98,26 @@ func Process(actorScopes, requiredRules string) (Result, error) {
 	// return unknown until we are done testing our cases for now
 	// otherwise we should return unknown for errors at least
 	return ResultUnknown, nil
+}
+
+// expandVars takes a string that contains a/[b,c,d] lists and expands to a/b,a/c,a/d
+func expandVars(value string) []string {
+	if !strings.Contains(value, ArraySeperator) {
+		return []string{value}
+	}
+
+	ret := make([]string, 0)
+	blocks := strings.Split(value, BlockSeperator)
+	blocksCopy := make([]string, len(blocks))
+	for i, b := range blocks {
+		if strings.Contains(b, ArraySeperator) {
+			copy(blocksCopy, blocks)
+			for _, arrayValue := range strings.Split(b, ArraySeperator) {
+				blocksCopy[i] = arrayValue
+				ret = append(ret, expandVars(strings.Join(blocksCopy, BlockSeperator))...)
+			}
+		}
+	}
+
+	return ret
 }
