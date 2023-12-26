@@ -11,23 +11,11 @@ import (
 	"github.com/miniscruff/scopie-go/then"
 )
 
-type testModifiers struct {
-	Result            string `json:"result"`
-	ActorLength       int    `json:"actor_length"`
-	RulesLength       int    `json:"rules_length"`
-	BlockCount        int    `json:"block_count"`
-	BlockLength       int    `json:"block_length"`
-	BlockArraysLength int    `json:"block_arrays_length"`
-	BlockVarsLength   int    `json:"block_vars_length"`
-	Case              string `json:"case"`
-}
-
 type testScenario struct {
-	Modifiers testModifiers `json:"modifiers"`
-	ID        string        `json:"id"`
-	Actor     string        `json:"actor"`
-	Rules     string        `json:"rules"`
-	Result    string        `json:"result,omitempty"`
+	ID     string `json:"id"`
+	Actor  string `json:"actor"`
+	Rules  string `json:"rules"`
+	Result string `json:"result,omitempty"`
 }
 
 type validationTestCase struct {
