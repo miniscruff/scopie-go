@@ -2,7 +2,6 @@ package scopie
 
 import (
 	"log/slog"
-	"slices"
 	"strings"
 )
 
@@ -10,12 +9,15 @@ const (
 	BlockSeperator = "/"
 	ScopeSeperator = ","
 	ArraySeperator = "|"
+	VariablePrefix = "@"
+	Wildcard       = "*"
+	SuperWildcard  = "**"
 )
 
 type Result string
 
 const (
-	ResultUnknown Result = "uknown"
+	ResultUnknown Result = "unknown"
 	ResultAllow   Result = "allow"
 	ResultDeny    Result = "deny"
 )
@@ -26,7 +28,7 @@ const (
 var Logger *slog.Logger
 
 // Process ...
-func Process(actorScopes, requiredRules string) (Result, error) {
+func Process(vars map[string]string, actorScopes, requiredRules string) (Result, error) {
 	logger := Logger
 	if logger == nil {
 		logger = slog.Default()
@@ -35,6 +37,7 @@ func Process(actorScopes, requiredRules string) (Result, error) {
 	logger = logger.With(
 		"actorScopes", actorScopes,
 		"requiredRules", requiredRules,
+		"variables", vars,
 	)
 
 	// do this the simplest way for now, efficiency can come later...
@@ -42,38 +45,35 @@ func Process(actorScopes, requiredRules string) (Result, error) {
 	logger.Debug("processing scopes")
 
 	actorScopesSplit := strings.Split(actorScopes, ScopeSeperator)
-	actorScopesSplitExpanded := make([]string, 0)
-	for _, actorScope := range actorScopesSplit {
-		actorScopesSplitExpanded = append(actorScopesSplitExpanded, expandVars(actorScope)...)
+	ruleScopesSplit := strings.Split(requiredRules, ScopeSeperator)
+	ruleScopes := make([][]string, len(ruleScopesSplit))
+	for i, ruleScope := range ruleScopesSplit {
+		ruleScopes[i] = strings.Split(ruleScope, BlockSeperator)
 	}
 
-	logger.Debug("expanded scopes", "expanded", actorScopesSplitExpanded)
-
-	for _, actorScope := range actorScopesSplitExpanded {
+	for _, actorScope := range actorScopesSplit {
 		actorSplit := strings.Split(actorScope, BlockSeperator)
 		actorScopes := actorSplit[1:]
 		rule := actorSplit[0]
 
 		// we can skip this allow rule since we were already approved
-		if hasBeenAllowed && rule == string(ResultAllow) {
-			continue
-		}
+		// if hasBeenAllowed && rule == string(ResultAllow) {
+		// continue
+		// }
 
-		for _, requiredRule := range strings.Split(requiredRules, ScopeSeperator) {
-			ruleScopes := strings.Split(requiredRule, BlockSeperator)
-
-			if slices.Equal(ruleScopes, actorScopes) {
+		for _, ruleScope := range ruleScopes {
+			if isMatch(vars, actorScopes, ruleScope) {
 				logger.Debug(
 					"matched actor and rule",
 					"actorScope", actorScope,
-					"rule", requiredRule,
+					"rule", ruleScope,
 				)
 
 				if rule == string(ResultDeny) {
 					logger.Debug(
 						"matched deny rule",
 						"actorScope", actorScope,
-						"rule", requiredRule,
+						"rule", ruleScope,
 					)
 
 					return ResultDeny, nil
@@ -81,7 +81,7 @@ func Process(actorScopes, requiredRules string) (Result, error) {
 					logger.Debug(
 						"matched allow rule",
 						"actorScope", actorScope,
-						"rule", requiredRule,
+						"rule", ruleScope,
 					)
 
 					hasBeenAllowed = true
@@ -100,24 +100,39 @@ func Process(actorScopes, requiredRules string) (Result, error) {
 	return ResultUnknown, nil
 }
 
-// expandVars takes a string that contains a/[b,c,d] lists and expands to a/b,a/c,a/d
-func expandVars(value string) []string {
-	if !strings.Contains(value, ArraySeperator) {
-		return []string{value}
-	}
+func isMatch(vars map[string]string, actorScope, ruleScope []string) bool {
+	slog.Info("checking a match", "actor", actorScope, "rule", ruleScope)
+NextRule:
+	for i, ruleBlock := range ruleScope {
+        if len(actorScope) <= i {
+            return false
+        }
+		actorBlock := actorScope[i]
+		if actorBlock == Wildcard {
+			continue
+		}
 
-	ret := make([]string, 0)
-	blocks := strings.Split(value, BlockSeperator)
-	blocksCopy := make([]string, len(blocks))
-	for i, b := range blocks {
-		if strings.Contains(b, ArraySeperator) {
-			copy(blocksCopy, blocks)
-			for _, arrayValue := range strings.Split(b, ArraySeperator) {
-				blocksCopy[i] = arrayValue
-				ret = append(ret, expandVars(strings.Join(blocksCopy, BlockSeperator))...)
+		if actorBlock == SuperWildcard {
+			return true
+		}
+
+		if strings.Contains(actorBlock, ArraySeperator) {
+			slog.Info("comparing rule array to scope", "rule array", ruleBlock)
+			for _, actorArrayValue := range strings.Split(actorBlock, ArraySeperator) {
+				if actorArrayValue == ruleBlock {
+					slog.Info("found matching array value", "value", actorArrayValue)
+					continue NextRule
+				}
 			}
+			return false
+		} else if strings.HasPrefix(actorBlock, VariablePrefix) {
+			if vars[strings.TrimPrefix(actorBlock, VariablePrefix)] != ruleBlock {
+				return false
+			}
+		} else if ruleBlock != actorBlock {
+			return false
 		}
 	}
 
-	return ret
+	return true
 }
