@@ -12,10 +12,11 @@ import (
 )
 
 type testScenario struct {
-	ID     string `json:"id"`
-	Actor  string `json:"actor"`
-	Rules  string `json:"rules"`
-	Result string `json:"result,omitempty"`
+	ID        string            `json:"id"`
+	Actor     string            `json:"actor"`
+	Rules     string            `json:"rules"`
+	Result    string            `json:"result,omitempty"`
+	Variables map[string]string `json:"variables"`
 }
 
 type validationTestCase struct {
@@ -46,7 +47,7 @@ func Test_Validations(t *testing.T) {
 	tc := LoadScenarios(t)
 	for _, scenario := range tc.Scenarios {
 		t.Run(scenario.ID, func(t *testing.T) {
-			res, err := Process(scenario.Actor, scenario.Rules)
+			res, err := Process(scenario.Variables, scenario.Actor, scenario.Rules)
 			// TODO: handle invalid test
 
 			then.Nil(t, err)
@@ -63,7 +64,7 @@ func Benchmark_Validations(b *testing.B) {
 		b.Run(scenario.ID, func(b *testing.B) {
 			b.ReportAllocs()
 			for i := 0; i < b.N; i++ {
-				_, err := Process(scenario.Actor, scenario.Rules)
+				_, err := Process(scenario.Variables, scenario.Actor, scenario.Rules)
 				then.Nil(b, err)
 			}
 		})
