@@ -2,11 +2,8 @@ package scopie
 
 import (
 	"encoding/json"
-	"log/slog"
 	"os"
 	"testing"
-
-	"github.com/neilotoole/slogt"
 
 	"github.com/miniscruff/scopie-go/then"
 )
@@ -25,14 +22,6 @@ type validationTestCase struct {
 }
 
 func LoadScenarios(t testing.TB) validationTestCase {
-	slogDef := slog.Default()
-	t.Cleanup(func() {
-		slog.SetDefault(slogDef)
-	})
-
-	testLog := slogt.New(t, slogt.JSON())
-	slog.SetDefault(testLog)
-
 	testFile, err := os.Open("testdata/scopie_scenarios.json")
 	then.Nil(t, err)
 

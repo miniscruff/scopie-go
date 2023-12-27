@@ -1,7 +1,6 @@
 package scopie
 
 import (
-	"log/slog"
 	"strings"
 )
 
@@ -22,27 +21,10 @@ const (
 	ResultDeny    Result = "deny"
 )
 
-// Logger can be used to override the default logger,
-// otherwise it will use slog.Default().
-// Scopie only ever logs to debug level.
-var Logger *slog.Logger
-
 // Process ...
 func Process(vars map[string]string, actorScopes, requiredRules string) (Result, error) {
-	logger := Logger
-	if logger == nil {
-		logger = slog.Default()
-	}
-
-	logger = logger.With(
-		"actorScopes", actorScopes,
-		"requiredRules", requiredRules,
-		"variables", vars,
-	)
-
 	// do this the simplest way for now, efficiency can come later...
 	hasBeenAllowed := false
-	logger.Debug("processing scopes")
 
 	actorScopesSplit := strings.Split(actorScopes, ScopeSeperator)
 	ruleScopesSplit := strings.Split(requiredRules, ScopeSeperator)
@@ -63,27 +45,9 @@ func Process(vars map[string]string, actorScopes, requiredRules string) (Result,
 
 		for _, ruleScope := range ruleScopes {
 			if isMatch(vars, actorScopes, ruleScope) {
-				logger.Debug(
-					"matched actor and rule",
-					"actorScope", actorScope,
-					"rule", ruleScope,
-				)
-
 				if rule == string(ResultDeny) {
-					logger.Debug(
-						"matched deny rule",
-						"actorScope", actorScope,
-						"rule", ruleScope,
-					)
-
 					return ResultDeny, nil
 				} else {
-					logger.Debug(
-						"matched allow rule",
-						"actorScope", actorScope,
-						"rule", ruleScope,
-					)
-
 					hasBeenAllowed = true
 				}
 			}
@@ -91,7 +55,6 @@ func Process(vars map[string]string, actorScopes, requiredRules string) (Result,
 	}
 
 	if hasBeenAllowed {
-		logger.Debug("has been allowed")
 		return ResultAllow, nil
 	}
 
@@ -101,7 +64,6 @@ func Process(vars map[string]string, actorScopes, requiredRules string) (Result,
 }
 
 func isMatch(vars map[string]string, actorScope, ruleScope []string) bool {
-	slog.Info("checking a match", "actor", actorScope, "rule", ruleScope)
 NextRule:
 	for i, ruleBlock := range ruleScope {
         if len(actorScope) <= i {
@@ -117,10 +79,8 @@ NextRule:
 		}
 
 		if strings.Contains(actorBlock, ArraySeperator) {
-			slog.Info("comparing rule array to scope", "rule array", ruleBlock)
 			for _, actorArrayValue := range strings.Split(actorBlock, ArraySeperator) {
 				if actorArrayValue == ruleBlock {
-					slog.Info("found matching array value", "value", actorArrayValue)
 					continue NextRule
 				}
 			}
