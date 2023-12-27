@@ -39,9 +39,9 @@ func Process(vars map[string]string, actorScopes, requiredRules string) (Result,
 		rule := actorSplit[0]
 
 		// we can skip this allow rule since we were already approved
-		// if hasBeenAllowed && rule == string(ResultAllow) {
-		// continue
-		// }
+		if hasBeenAllowed && rule == string(ResultAllow) {
+			continue
+		}
 
 		for _, ruleScope := range ruleScopes {
 			if isMatch(vars, actorScopes, ruleScope) {
@@ -66,9 +66,9 @@ func Process(vars map[string]string, actorScopes, requiredRules string) (Result,
 func isMatch(vars map[string]string, actorScope, ruleScope []string) bool {
 NextRule:
 	for i, ruleBlock := range ruleScope {
-        if len(actorScope) <= i {
-            return false
-        }
+		if len(actorScope) <= i {
+			return false
+		}
 		actorBlock := actorScope[i]
 		if actorBlock == Wildcard {
 			continue

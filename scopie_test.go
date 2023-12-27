@@ -59,3 +59,30 @@ func Benchmark_Validations(b *testing.B) {
 		})
 	}
 }
+
+/*
+func Benchmark_StringAlloc(b *testing.B) {
+	left := strings.Repeat("abcde", 50) + "peach"
+	right := "peach"
+
+	stringChecker := func(leftIndex int, left, right string) bool {
+		for k := 0; k < len(right); k++ {
+			if left[leftIndex+k] != right[k] {
+				return false
+			}
+		}
+		return true
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		for j := 0; j < len(left)-5; j++ {
+			if stringChecker(j, left, right) {
+				return
+			}
+		}
+	}
+}
+*/

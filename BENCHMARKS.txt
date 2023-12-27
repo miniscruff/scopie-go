@@ -2,27 +2,27 @@ goos: linux
 goarch: amd64
 pkg: github.com/miniscruff/scopie-go
 cpu: AMD Ryzen 7 2700 Eight-Core Processor          
-Benchmark_Validations/allow,1actor,1rule,1block1length-16         	  788312	      1293 ns/op	     104 B/op	       5 allocs/op
-Benchmark_Validations/deny,1actor,1rule,1block1length-16          	  742784	      1547 ns/op	     104 B/op	       5 allocs/op
-Benchmark_Validations/allow,5actor,3rules,3blocks10length,best-16 	  238418	      4333 ns/op	     672 B/op	      11 allocs/op
-Benchmark_Validations/allow,5actor,3rules,3blocks10length,worst-16         	  268552	      4013 ns/op	     672 B/op	      11 allocs/op
-Benchmark_Validations/deny,5actor,3rules,3blocks10length,best-16           	  383038	      2723 ns/op	     416 B/op	       7 allocs/op
-Benchmark_Validations/deny,5actor,3rules,3blocks10length,worst-16          	  260937	      4275 ns/op	     672 B/op	      11 allocs/op
-Benchmark_Validations/allow,2actor,1rule,3block5length,3array,best-16      	  325629	      3173 ns/op	     440 B/op	      10 allocs/op
-Benchmark_Validations/allow,2actor,1rule,3block5length,3array,worst-16     	  352708	      3355 ns/op	     440 B/op	      10 allocs/op
-Benchmark_Validations/deny,2actor,1rule,3block5length,3array,best-16       	  395434	      2603 ns/op	     328 B/op	       8 allocs/op
-Benchmark_Validations/deny,2actor,1rule,3block5length,3array,worst-16      	  332961	      3143 ns/op	     440 B/op	      10 allocs/op
-Benchmark_Validations/allow,3actor,1rule,3block5length,3variables,best-16  	  440852	      2636 ns/op	     328 B/op	       7 allocs/op
-Benchmark_Validations/allow,3actor,1rule,3block5length,3variables,worst-16 	  690230	      2818 ns/op	     328 B/op	       7 allocs/op
-Benchmark_Validations/deny,2actor,1rule,3block5length,3variables,best-16   	  578025	      2051 ns/op	     200 B/op	       5 allocs/op
-Benchmark_Validations/deny,2actor,1rule,3block5length,3variables,best#01-16         	  535602	      2757 ns/op	     328 B/op	       7 allocs/op
-Benchmark_Validations/allow,3actor,1rule,3block5length,wildcard,best-16             	  514962	      2732 ns/op	     328 B/op	       7 allocs/op
-Benchmark_Validations/allow,3actor,1rule,3block5length,wildcard,worst-16            	  498338	      2641 ns/op	     328 B/op	       7 allocs/op
-Benchmark_Validations/deny,2actor,1rule,3block5length,wildcard,best-16              	  729854	      1655 ns/op	     200 B/op	       5 allocs/op
-Benchmark_Validations/deny,2actor,1rule,3block5length,wildcard,best#01-16           	  461670	      2648 ns/op	     328 B/op	       7 allocs/op
-Benchmark_Validations/allow,3actor,1rule,3block5length,superwildcard,best-16        	  373004	      2765 ns/op	     312 B/op	       7 allocs/op
-Benchmark_Validations/allow,3actor,1rule,3block5length,superwildcard,worst-16       	  576085	      2656 ns/op	     312 B/op	       7 allocs/op
-Benchmark_Validations/deny,2actor,1rule,3block5length,superwildcard,best-16         	  657088	      1999 ns/op	     184 B/op	       5 allocs/op
-Benchmark_Validations/deny,2actor,1rule,3block5length,superwildcard,best#01-16      	  483547	      2468 ns/op	     312 B/op	       7 allocs/op
+Benchmark_Validations/allow,1actor,1rule,1block1length-16         	  812826	      1675 ns/op	     104 B/op	       5 allocs/op
+Benchmark_Validations/deny,1actor,1rule,1block1length-16          	  654063	      1735 ns/op	     104 B/op	       5 allocs/op
+Benchmark_Validations/allow,5actor,3rules,3blocks10length,best-16 	  303033	      3944 ns/op	     672 B/op	      11 allocs/op
+Benchmark_Validations/allow,5actor,3rules,3blocks10length,worst-16         	  257023	      4223 ns/op	     672 B/op	      11 allocs/op
+Benchmark_Validations/deny,5actor,3rules,3blocks10length,best-16           	  376479	      2902 ns/op	     416 B/op	       7 allocs/op
+Benchmark_Validations/deny,5actor,3rules,3blocks10length,worst-16          	  275049	      4048 ns/op	     672 B/op	      11 allocs/op
+Benchmark_Validations/allow,2actor,1rule,3block5length,3array,best-16      	  340532	      3086 ns/op	     392 B/op	       9 allocs/op
+Benchmark_Validations/allow,2actor,1rule,3block5length,3array,worst-16     	  320608	      3306 ns/op	     440 B/op	      10 allocs/op
+Benchmark_Validations/deny,2actor,1rule,3block5length,3array,best-16       	  419322	      2697 ns/op	     328 B/op	       8 allocs/op
+Benchmark_Validations/deny,2actor,1rule,3block5length,3array,worst-16      	  328406	      3355 ns/op	     440 B/op	      10 allocs/op
+Benchmark_Validations/allow,3actor,1rule,3block5length,3variables,best-16  	  465436	      2993 ns/op	     328 B/op	       7 allocs/op
+Benchmark_Validations/allow,3actor,1rule,3block5length,3variables,worst-16 	  376730	      2906 ns/op	     328 B/op	       7 allocs/op
+Benchmark_Validations/deny,2actor,1rule,3block5length,3variables,best-16   	  455580	      2210 ns/op	     200 B/op	       5 allocs/op
+Benchmark_Validations/deny,2actor,1rule,3block5length,3variables,worst-16  	  411909	      2842 ns/op	     328 B/op	       7 allocs/op
+Benchmark_Validations/allow,3actor,1rule,3block5length,wildcard,best-16    	  390057	      2756 ns/op	     328 B/op	       7 allocs/op
+Benchmark_Validations/allow,3actor,1rule,3block5length,wildcard,worst-16   	  373148	      2800 ns/op	     328 B/op	       7 allocs/op
+Benchmark_Validations/deny,2actor,1rule,3block5length,wildcard,best-16     	  513811	      2073 ns/op	     200 B/op	       5 allocs/op
+Benchmark_Validations/deny,2actor,1rule,3block5length,wildcard,worst-16    	  386364	      2786 ns/op	     328 B/op	       7 allocs/op
+Benchmark_Validations/allow,3actor,1rule,3block5length,superwildcard,best-16         	  410133	      2685 ns/op	     312 B/op	       7 allocs/op
+Benchmark_Validations/allow,3actor,1rule,3block5length,superwildcard,worst-16        	  397968	      2670 ns/op	     312 B/op	       7 allocs/op
+Benchmark_Validations/deny,2actor,1rule,3block5length,superwildcard,best-16          	  555783	      1958 ns/op	     184 B/op	       5 allocs/op
+Benchmark_Validations/deny,2actor,1rule,3block5length,superwildcard,worst-16         	  406746	      2787 ns/op	     312 B/op	       7 allocs/op
 PASS
-ok  	github.com/miniscruff/scopie-go	33.716s
+ok  	github.com/miniscruff/scopie-go	29.094s

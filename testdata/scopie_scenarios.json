@@ -95,7 +95,7 @@
       "result": "deny"
     },
     {
-      "id": "deny,2actor,1rule,3block5length,3variables,best",
+      "id": "deny,2actor,1rule,3block5length,3variables,worst",
       "actor": "allow/quick/zappy/zippy,allow/jacks/jocko/jugum,deny/@name01/@name02/@name03",
       "rules": "value01/value02/value03",
       "variables": {
@@ -124,7 +124,7 @@
       "result": "deny"
     },
     {
-      "id": "deny,2actor,1rule,3block5length,wildcard,best",
+      "id": "deny,2actor,1rule,3block5length,wildcard,worst",
       "actor": "allow/quick/zappy/zippy,allow/jacks/jocko/jugum,deny/zilch/*/kanzu",
       "rules": "zilch/karzy/kanzu",
       "result": "deny"
@@ -148,7 +148,7 @@
       "result": "deny"
     },
     {
-      "id": "deny,2actor,1rule,3block5length,superwildcard,best",
+      "id": "deny,2actor,1rule,3block5length,superwildcard,worst",
       "actor": "allow/quick/zappy/zippy,allow/jacks/jocko/jugum,deny/zilch/**",
       "rules": "zilch/karzy/kanzu",
       "result": "deny"
