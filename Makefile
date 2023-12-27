@@ -16,7 +16,8 @@ test: # Run unit test suite
 
 .PHONY: bench
 bench: # Run benchmark test suite
-	go test -bench .
+	go test -bench . > BENCHMARKS.txt
+	cat BENCHMARKS.txt
 
 .PHONY: format
 format: # Run linter and formatters
