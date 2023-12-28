@@ -16,10 +16,13 @@ test: # Run unit test suite
 
 .PHONY: bench
 bench: # Run benchmark test suite
-	go test -bench . > BENCHMARKS.txt
-	cat BENCHMARKS.txt
+	go test -bench .
 
 .PHONY: format
 format: # Run linter and formatters
 	goimports -w -local github.com/miniscruff/scopie-go .
 	golangci-lint run ./...
+
+.PHONY: gen
+gen:
+	go test -bench . > BENCHMARKS.txt
