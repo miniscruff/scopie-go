@@ -40,6 +40,7 @@ func IsAllowed(vars map[string]string, requiredRules, actorScopes string) (bool,
 					} else {
 						return false, nil
 					}
+
 					break
 				}
 			} else {
@@ -73,6 +74,7 @@ func compareFrom(aValue *string, aIndex int, bValue *string, bIndex int, vars ma
 
 	aLeft := aIndex
 	aSlider := aIndex
+
 	for ; aSlider < len(*aValue); aSlider++ {
 		if (*aValue)[aSlider] == BlockSeperator || (*aValue)[aSlider] == ScopeSeperator {
 			if compareChunk(aValue, aLeft, aSlider, bValue, bIndex, bSlider, vars) {
