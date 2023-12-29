@@ -1,0 +1,50 @@
+linters-settings:
+  exhaustive:
+    default-signifies-exhaustive: false
+  gci:
+    local-prefixes: github.com/miniscruff/scopie-go
+  goconst:
+    min-len: 5
+    min-occurrences: 5
+  gocyclo:
+    min-complexity: 16
+  goimports:
+    local-prefixes: github.com/miniscruff/scopie-go
+  golint:
+    min-confidence: 0
+  govet:
+    check-shadowing: true
+  misspell:
+    locale: US
+  nolintlint:
+    allow-unused: false # report any unused nolint directives
+    require-explanation: false # don't require an explanation for nolint directives
+    require-specific: false # don't require nolint directives to be specific about which linter is being skipped
+linters:
+  enable:
+    - bodyclose
+    - dogsled
+    - dupl
+    - errcheck
+    - exhaustive
+    - goconst
+    - gocyclo
+    - gofmt
+    - goimports
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - nakedret
+    - noctx
+    - nolintlint
+    - staticcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - whitespace
+    - wsl

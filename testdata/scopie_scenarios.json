@@ -5,61 +5,61 @@
       "id": "allow,1actor,1rule,1block1length",
       "actor": "allow/A",
       "rules": "A",
-      "result": "allow"
+      "result": true
     },
     {
       "id": "deny,1actor,1rule,1block1length",
       "actor": "deny/A",
       "rules": "A",
-      "result": "deny"
+      "result": false
     },
     {
       "id": "allow,5actor,3rules,3blocks10length,best",
       "actor": "allow/razzmatazz/vajazzling/buckjumper,allow/blackjacks/unpuzzling/unmuzzling,allow/jumboizing/embezzling/buckjumped,allow/whizzbangs/squeezebox/puzzlingly,allow/buzzworthy/bemuzzling/jazzercise",
       "rules": "razzmatazz/vajazzling/buckjumper,buzzphase/dizzingly/puzzlement,schemozzle/scuzzballs/zigzagging",
-      "result": "allow"
+      "result": true
     },
     {
       "id": "allow,5actor,3rules,3blocks10length,worst",
       "actor": "allow/razzmatazz/vajazzling/buckjumper,allow/blackjacks/unpuzzling/unmuzzling,allow/jumboizing/embezzling/buckjumped,allow/whizzbangs/squeezebox/puzzlingly,allow/buzzworthy/bemuzzling/jazzercise",
       "rules": "buzzphase/dizzingly/puzzlement,schemozzle/scuzzballs/zigzagging,buzzworthy/bemuzzling/jazzercise",
-      "result": "allow"
+      "result": true
     },
     {
       "id": "deny,5actor,3rules,3blocks10length,best",
       "actor": "deny/razzmatazz/vajazzling/buckjumper,allow/blackjacks/unpuzzling/unmuzzling,allow/jumboizing/embezzling/buckjumped,allow/whizzbangs/squeezebox/puzzlingly,allow/buzzworthy/bemuzzling/jazzercise",
       "rules": "razzmatazz/vajazzling/buckjumper,buzzphase/dizzingly/puzzlement,schemozzle/scuzzballs/zigzagging",
-      "result": "deny"
+      "result": false
     },
     {
       "id": "deny,5actor,3rules,3blocks10length,worst",
       "actor": "allow/razzmatazz/vajazzling/buckjumper,allow/blackjacks/unpuzzling/unmuzzling,allow/jumboizing/embezzling/buckjumped,allow/whizzbangs/squeezebox/puzzlingly,deny/buzzworthy/bemuzzling/jazzercise",
       "rules": "buzzphase/dizzingly/puzzlement,schemozzle/scuzzballs/zigzagging,buzzworthy/bemuzzling/jazzercise",
-      "result": "deny"
+      "result": false
     },
     {
       "id": "allow,2actor,1rule,3block5length,3array,best",
       "actor": "allow/pzazz|bezzy|bizzy/jazzy|fizzy|pozzy/buzzy|fuzzy|muzzy,allow/whizz|zhuzh|abuzz/scuzz|dizzy|frizz/huzza|mezza|mezzo",
       "rules": "pzazz/jazzy/buzzy",
-      "result": "allow"
+      "result": true
     },
     {
       "id": "allow,2actor,1rule,3block5length,3array,worst",
       "actor": "allow/pzazz|bezzy|bizzy/jazzy|fizzy|pozzy/buzzy|fuzzy|muzzy,allow/whizz|zhuzh|abuzz/scuzz|dizzy|frizz/huzza|mezza|mezzo",
       "rules": "abuzz/frizz/mezzo",
-      "result": "allow"
+      "result": true
     },
     {
       "id": "deny,2actor,1rule,3block5length,3array,best",
       "actor": "deny/pzazz|bezzy|bizzy/jazzy|fizzy|pozzy/buzzy|fuzzy|muzzy,allow/whizz|zhuzh|abuzz/scuzz|dizzy|frizz/huzza|mezza|mezzo",
       "rules": "pzazz/jazzy/buzzy",
-      "result": "deny"
+      "result": false
     },
     {
       "id": "deny,2actor,1rule,3block5length,3array,worst",
       "actor": "allow/pzazz|bezzy|bizzy/jazzy|fizzy|pozzy/buzzy|fuzzy|muzzy,deny/whizz|zhuzh|abuzz/scuzz|dizzy|frizz/huzza|mezza|mezzo",
       "rules": "abuzz/frizz/mezzo",
-      "result": "deny"
+      "result": false
     },
     {
       "id": "allow,3actor,1rule,3block5length,3variables,best",
@@ -70,7 +70,7 @@
           "name02": "value02",
           "name03": "value03"
       },
-      "result": "allow"
+      "result": true
     },
     {
       "id": "allow,3actor,1rule,3block5length,3variables,worst",
@@ -81,7 +81,7 @@
           "name02": "value02",
           "name03": "value03"
       },
-      "result": "allow"
+      "result": true
     },
     {
       "id": "deny,2actor,1rule,3block5length,3variables,best",
@@ -92,10 +92,10 @@
           "name02": "value02",
           "name03": "value03"
       },
-      "result": "deny"
+      "result": false
     },
     {
-      "id": "deny,2actor,1rule,3block5length,3variables,best",
+      "id": "deny,2actor,1rule,3block5length,3variables,worst",
       "actor": "allow/quick/zappy/zippy,allow/jacks/jocko/jugum,deny/@name01/@name02/@name03",
       "rules": "value01/value02/value03",
       "variables": {
@@ -103,55 +103,55 @@
           "name02": "value02",
           "name03": "value03"
       },
-      "result": "deny"
+      "result": false
     },
     {
       "id": "allow,3actor,1rule,3block5length,wildcard,best",
       "actor": "allow/jivey/*/juicy,allow/jimmy/jimpy/junky,allow/mujik/muzak/quack",
       "rules": "jivey/juked/juicy",
-      "result": "allow"
+      "result": true
     },
     {
       "id": "allow,3actor,1rule,3block5length,wildcard,worst",
       "actor": "allow/jimmy/jimpy/junky,allow/mujik/muzak/quack,allow/juffs/*/jaggy",
       "rules": "juffs/jokey/jaggy",
-      "result": "allow"
+      "result": true
     },
     {
       "id": "deny,2actor,1rule,3block5length,wildcard,best",
       "actor": "deny/khazi/*/pujah,allow/quick/zappy/zippy,allow/jacks/jocko/jugum",
       "rules": "khazi/zincy/pujah",
-      "result": "deny"
+      "result": false
     },
     {
-      "id": "deny,2actor,1rule,3block5length,wildcard,best",
+      "id": "deny,2actor,1rule,3block5length,wildcard,worst",
       "actor": "allow/quick/zappy/zippy,allow/jacks/jocko/jugum,deny/zilch/*/kanzu",
       "rules": "zilch/karzy/kanzu",
-      "result": "deny"
+      "result": false
     },
     {
       "id": "allow,3actor,1rule,3block5length,superwildcard,best",
       "actor": "allow/jivey/**,allow/jimmy/jimpy/junky,allow/mujik/muzak/quack",
       "rules": "jivey/juked/juicy",
-      "result": "allow"
+      "result": true
     },
     {
       "id": "allow,3actor,1rule,3block5length,superwildcard,worst",
       "actor": "allow/jimmy/jimpy/junky,allow/mujik/muzak/quack,allow/juffs/**",
       "rules": "juffs/jokey/jaggy",
-      "result": "allow"
+      "result": true
     },
     {
       "id": "deny,2actor,1rule,3block5length,superwildcard,best",
       "actor": "deny/khazi/**,allow/quick/zappy/zippy,allow/jacks/jocko/jugum",
       "rules": "khazi/zincy/pujah",
-      "result": "deny"
+      "result": false
     },
     {
-      "id": "deny,2actor,1rule,3block5length,superwildcard,best",
+      "id": "deny,2actor,1rule,3block5length,superwildcard,worst",
       "actor": "allow/quick/zappy/zippy,allow/jacks/jocko/jugum,deny/zilch/**",
       "rules": "zilch/karzy/kanzu",
-      "result": "deny"
+      "result": false
     }
   ]
 }
