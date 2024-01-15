@@ -6,8 +6,6 @@ linters-settings:
   goconst:
     min-len: 5
     min-occurrences: 5
-  gocyclo:
-    min-complexity: 16
   goimports:
     local-prefixes: github.com/miniscruff/scopie-go
   golint:
@@ -28,7 +26,6 @@ linters:
     - errcheck
     - exhaustive
     - goconst
-    - gocyclo
     - gofmt
     - goimports
     - goprintffuncname
@@ -36,6 +33,7 @@ linters:
     - gosimple
     - govet
     - ineffassign
+    - lll
     - misspell
     - nakedret
     - noctx

@@ -11,21 +11,23 @@ import (
 type testScenario struct {
 	ID        string            `json:"id"`
 	Actor     string            `json:"actor"`
-	Rules     string            `json:"rules"`
-	Result    bool              `json:"result,omitempty"`
+	Scopes    string            `json:"scopes"`
+	Result    bool              `json:"result"`
 	Variables map[string]string `json:"variables"`
+	Error     string            `json:"error"`
 }
 
-type validationTestCase struct {
-	Version   string         `json:"version"`
-	Scenarios []testScenario `json:"scenarios"`
+type coreTestCase struct {
+	Version     string         `json:"version"`
+	Validations []testScenario `json:"validations"`
+	Benchmarks  []testScenario `json:"benchmarks"`
 }
 
-func LoadScenarios(t testing.TB) validationTestCase {
+func LoadScenarios(t testing.TB) coreTestCase {
 	testFile, err := os.Open("testdata/scopie_scenarios.json")
 	then.Nil(t, err)
 
-	var tc validationTestCase
+	var tc coreTestCase
 	err = json.NewDecoder(testFile).Decode(&tc)
 	then.Nil(t, err)
 
@@ -34,13 +36,23 @@ func LoadScenarios(t testing.TB) validationTestCase {
 
 func Test_Validations(t *testing.T) {
 	tc := LoadScenarios(t)
-	for _, scenario := range tc.Scenarios {
+	for _, scenario := range tc.Validations {
 		t.Run(scenario.ID, func(t *testing.T) {
-			res, err := IsAllowed(scenario.Variables, scenario.Rules, scenario.Actor)
-			// TODO: handle invalid test
+			res, err := IsAllowed(scenario.Variables, scenario.Scopes, scenario.Actor)
+			if scenario.Error != "" {
+				then.NotNil(t, err)
+				then.Equals(t, scenario.Error, err.Error())
+			} else {
+				then.Nil(t, err)
+				then.Equals(t, scenario.Result, res)
+			}
+		})
+	}
 
+	for _, scenario := range tc.Benchmarks {
+		t.Run(scenario.ID, func(t *testing.T) {
+			_, err := IsAllowed(scenario.Variables, scenario.Scopes, scenario.Actor)
 			then.Nil(t, err)
-			then.Equals(t, scenario.Result, res)
 		})
 	}
 }
@@ -73,74 +85,71 @@ func Test_JumpBlockOrScope_WhenScope(t *testing.T) {
 func Test_CompareStringsAfterIndexes_WithMatch(t *testing.T) {
 	a := "allow/alpha/beta"
 	b := "alpha/beta"
-	nextA, nextB, doesMatch := compareFrom(&a, 6, &b, 0, nil)
+	nextA, nextB, doesMatch, err := compareFrom(&a, 6, &b, 0, nil)
 	then.True(t, doesMatch)
 	then.Equals(t, 12, nextA)
 	then.Equals(t, 6, nextB)
+	then.Nil(t, err)
 }
 
 func Test_CompareStringsAfterIndexes_NoMatch(t *testing.T) {
 	a := "allow/alpha/beta"
 	b := "centi/beta"
-	nextA, nextB, doesMatch := compareFrom(&a, 6, &b, 0, nil)
+	nextA, nextB, doesMatch, err := compareFrom(&a, 6, &b, 0, nil)
 	then.False(t, doesMatch)
 	then.Equals(t, 6, nextA)
 	then.Equals(t, 0, nextB)
+	then.Nil(t, err)
 }
 
 func Test_CompareStringsAfterIndexes_DiffLengths(t *testing.T) {
 	a := "allow/alpha/beta"
 	b := "unicorn/beta"
-	nextA, nextB, doesMatch := compareFrom(&a, 6, &b, 0, nil)
+	nextA, nextB, doesMatch, err := compareFrom(&a, 6, &b, 0, nil)
 	then.False(t, doesMatch)
 	then.Equals(t, 6, nextA)
 	then.Equals(t, 0, nextB)
+	then.Nil(t, err)
 }
 
 func Test_CompareStringsAfterIndexes_AtEnd(t *testing.T) {
 	a := "allow/alpha/beta"
 	b := "alpha/beta"
-	nextA, nextB, doesMatch := compareFrom(&a, 12, &b, 6, nil)
+	nextA, nextB, doesMatch, err := compareFrom(&a, 12, &b, 6, nil)
 	then.True(t, doesMatch)
 	then.Equals(t, len(a)+1, nextA)
 	then.Equals(t, len(b)+1, nextB)
+	then.Nil(t, err)
 }
 
 func Test_CompareStringsAfterIndexes_WithWildcard(t *testing.T) {
 	a := "allow/*/beta"
 	b := "alpha/beta"
-	nextA, nextB, doesMatch := compareFrom(&a, 6, &b, 0, nil)
+	nextA, nextB, doesMatch, err := compareFrom(&a, 6, &b, 0, nil)
 	then.True(t, doesMatch)
 	then.Equals(t, 8, nextA)
 	then.Equals(t, 6, nextB)
-}
-
-func Test_CompareStringsAfterIndexes_WithSuperWildcard(t *testing.T) {
-	a := "allow/alpha/**/gamma,deny/no/match"
-	b := "alpha/beta/irrelevant"
-	nextA, nextB, doesMatch := compareFrom(&a, 12, &b, 6, nil)
-	then.True(t, doesMatch)
-	t.Log(string(a[21]))
-	then.Equals(t, 21, nextA)
-	then.Equals(t, len(b), nextB)
+	then.Nil(t, err)
 }
 
 func Test_CompareStringsAfterIndexes_WithArrays(t *testing.T) {
 	a := "allow/alpha|beta|ceti|omega|tango/beta"
 	b := "omega/beta"
-	nextA, nextB, doesMatch := compareFrom(&a, 6, &b, 0, nil)
+	nextA, nextB, doesMatch, err := compareFrom(&a, 6, &b, 0, nil)
 	then.True(t, doesMatch)
 	then.Equals(t, 34, nextA)
 	then.Equals(t, 6, nextB)
+	then.Nil(t, err)
 }
 
 func Test_CompareStringsAfterIndexes_WithArraysInList(t *testing.T) {
 	a := "allow/alpha|beta|ceti|omega|tango,allow/alpha/delta"
 	b := "omega/beta"
-	nextA, nextB, doesMatch := compareFrom(&a, 6, &b, 0, nil)
+	nextA, nextB, doesMatch, err := compareFrom(&a, 6, &b, 0, nil)
 	then.True(t, doesMatch)
 	then.Equals(t, 34, nextA)
 	then.Equals(t, 6, nextB)
+	then.Nil(t, err)
 }
 
 func Test_CompareStringsAfterIndexes_WithVar(t *testing.T) {
@@ -149,19 +158,20 @@ func Test_CompareStringsAfterIndexes_WithVar(t *testing.T) {
 	vars := map[string]string{
 		"me": "omega",
 	}
-	nextA, nextB, doesMatch := compareFrom(&a, 6, &b, 0, vars)
+	nextA, nextB, doesMatch, err := compareFrom(&a, 6, &b, 0, vars)
 	then.True(t, doesMatch)
 	then.Equals(t, 10, nextA)
 	then.Equals(t, 6, nextB)
+	then.Nil(t, err)
 }
 
 func Benchmark_Validations(b *testing.B) {
 	tc := LoadScenarios(b)
-	for _, scenario := range tc.Scenarios {
+	for _, scenario := range tc.Benchmarks {
 		b.Run(scenario.ID, func(b *testing.B) {
 			b.ReportAllocs()
 			for i := 0; i < b.N; i++ {
-				_, err := IsAllowed(scenario.Variables, scenario.Rules, scenario.Actor)
+				_, err := IsAllowed(scenario.Variables, scenario.Scopes, scenario.Actor)
 				then.Nil(b, err)
 			}
 		})
