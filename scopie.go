@@ -10,14 +10,24 @@ const (
 	Wildcard       = byte('*')
 )
 
+const (
+	fmtErrInvalidChar     = "scopie-100 in %s@%d: invalid character '%s'"
+	fmtErrVarInArray      = "scopie-101 in actor@%d: variable '%s' found in array block"
+	fmtErrWildcardInArray = "scopie-102 in actor@%d: wildcard found in array block"
+	fmtErrSuperInArray    = "scopie-103 in actor@%d: super wildcard found in array block"
+	fmtErrVarNotFound     = "scopie-104 in actor@%d: variable '%s' not found"
+	fmtErrSuperNotLast    = "scopie-105 in actor@%d: super wildcard not in the last block"
+	fmtErrEmpty           = "scopie-106 in %s@0: scope was empty"
+)
+
 // IsAllowed returns whether or not the required role scopes are fulfilled by our actor scopes.
 func IsAllowed(vars map[string]string, requiredScopes, actorScopes string) (bool, error) {
 	if requiredScopes == "" {
-		return false, fmt.Errorf("scopie-106 in scopes@0: scope was empty")
+		return false, fmt.Errorf(fmtErrEmpty, "scopes")
 	}
 
 	if actorScopes == "" {
-		return false, fmt.Errorf("scopie-106 in actor@0: scope was empty")
+		return false, fmt.Errorf(fmtErrEmpty, "actor")
 	}
 
 	actorIndex := 0
@@ -83,7 +93,7 @@ func compareFrom(
 	// Super wildcard is just two wildcards
 	if (*aValue)[aIndex] == Wildcard && aIndex < len(*aValue)-1 && (*aValue)[aIndex+1] == Wildcard {
 		if aIndex+2 < len(*aValue) && (*aValue)[aIndex+2] != ScopeSeperator {
-			return 0, 0, false, fmt.Errorf("scopie-105 in actor@%d: super wildcard not in the last block", aIndex)
+			return 0, 0, false, fmt.Errorf(fmtErrSuperNotLast, aIndex)
 		}
 
 		newAIndex := jumpAfterSeperator(aValue, aIndex, ScopeSeperator)
@@ -105,8 +115,7 @@ func compareFrom(
 			break
 		} else if !isValidCharacter((*bValue)[bSlider]) {
 			invalidChar := string((*bValue)[bSlider])
-			err := fmt.Errorf("scopie-100 in scopes@%d: invalid character '%s'", bSlider, invalidChar)
-			return 0, 0, false, err
+			return 0, 0, false, fmt.Errorf(fmtErrInvalidChar, "scopes", bSlider, invalidChar)
 		}
 	}
 
@@ -129,15 +138,15 @@ func compareFrom(
 		} else if (*aValue)[aSlider] == ArraySeperator {
 			wasArray = true
 			if (*aValue)[aLeft] == '@' {
-				return 0, 0, false, fmt.Errorf("scopie-101 in actor@%d: variable '%s' found in array block", aLeft, (*aValue)[aLeft+1:aSlider])
+				return 0, 0, false, fmt.Errorf(fmtErrVarInArray, aLeft, (*aValue)[aLeft+1:aSlider])
 			}
 
 			if (*aValue)[aLeft] == '*' {
 				if aLeft < len(*aValue)-1 && (*aValue)[aLeft+1] == '*' {
-					return 0, 0, false, fmt.Errorf("scopie-103 in actor@%d: super wildcard found in array block", aLeft)
+					return 0, 0, false, fmt.Errorf(fmtErrSuperInArray, aLeft)
 				}
 
-				return 0, 0, false, fmt.Errorf("scopie-102 in actor@%d: wildcard found in array block", aLeft)
+				return 0, 0, false, fmt.Errorf(fmtErrWildcardInArray, aLeft)
 			}
 
 			match, _ := compareChunk(aValue, aLeft, aSlider, bValue, bIndex, bSlider, nil)
@@ -149,21 +158,21 @@ func compareFrom(
 			aLeft = aSlider + 1
 			aSlider += 1
 		} else if !isValidCharacter((*aValue)[aSlider]) {
-			return 0, 0, false, fmt.Errorf("scopie-100 in actor@%d: invalid character '%s'", aSlider, string((*aValue)[aSlider]))
+			return 0, 0, false, fmt.Errorf(fmtErrInvalidChar, "actor", aSlider, string((*aValue)[aSlider]))
 		}
 	}
 
 	if wasArray {
 		if (*aValue)[aLeft] == '@' {
-			return 0, 0, false, fmt.Errorf("scopie-101 in actor@%d: variable '%s' found in array block", aLeft, (*aValue)[aLeft+1:aSlider])
+			return 0, 0, false, fmt.Errorf(fmtErrVarInArray, aLeft, (*aValue)[aLeft+1:aSlider])
 		}
 
 		if (*aValue)[aLeft] == '*' {
 			if aLeft < len(*aValue)-1 && (*aValue)[aLeft+1] == '*' {
-				return 0, 0, false, fmt.Errorf("scopie-103 in actor@%d: super wildcard found in array block", aLeft)
+				return 0, 0, false, fmt.Errorf(fmtErrSuperInArray, aLeft)
 			}
 
-			return 0, 0, false, fmt.Errorf("scopie-102 in actor@%d: wildcard found in array block", aLeft)
+			return 0, 0, false, fmt.Errorf(fmtErrWildcardInArray, aLeft)
 		}
 	}
 
@@ -179,13 +188,17 @@ func compareFrom(
 	return aIndex, bIndex, false, nil
 }
 
-func compareChunk(aValue *string, aLeft, aSlider int, bValue *string, bLeft, bSlider int, vars map[string]string) (bool, error) {
+func compareChunk(
+	aValue *string, aLeft, aSlider int,
+	bValue *string, bLeft, bSlider int,
+	vars map[string]string,
+) (bool, error) {
 	if (*aValue)[aLeft] == '@' {
 		key := (*aValue)[aLeft+1 : aSlider]
 		varValue, found := vars[key]
 
 		if !found {
-			return false, fmt.Errorf("scopie-104 in actor@%d: variable '%s' not found", aLeft, key)
+			return false, fmt.Errorf(fmtErrVarNotFound, aLeft, key)
 		}
 
 		return varValue == (*bValue)[bLeft:bSlider], nil
