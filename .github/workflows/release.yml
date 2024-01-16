@@ -1,0 +1,33 @@
+name: release
+
+on:
+  push:
+    branches: [ main ]
+    paths: [ CHANGELOG.md ]
+
+jobs:
+  release:
+    runs-on: ubuntu-20.04
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: 1.21
+
+    - name: Get the latest version
+      id: latest
+      uses: miniscruff/changie-action@v2
+      with:
+        version: latest
+        args: latest
+
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      with:
+        body_path: ".changes/${{ steps.latest.outputs.output }}.md"
+        tag_name: "${{ steps.latest.outputs.output }}"
+
