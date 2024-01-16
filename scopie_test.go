@@ -82,6 +82,12 @@ func Test_JumpBlockOrScope_WhenScope(t *testing.T) {
 	then.Equals(t, 6, afterIndex)
 }
 
+func Test_JumpBlockOrScope_WhenNeitherScopeOrBlock(t *testing.T) {
+	value := "alphabetaceti"
+	afterIndex := jumpBlockOrScopeSeperator(&value, 0)
+	then.Equals(t, 13, afterIndex)
+}
+
 func Test_CompareStringsAfterIndexes_WithMatch(t *testing.T) {
 	a := "allow/alpha/beta"
 	b := "alpha/beta"
