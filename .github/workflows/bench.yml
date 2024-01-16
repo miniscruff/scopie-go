@@ -1,0 +1,27 @@
+name: benchmark
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-20.04
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: 1.21
+
+    - name: Run benchmark and push
+      run: |
+        go test -bench . > BENCHMARKS.txt
+        git add BENCHMARKS.txt
+        git commit -m "Update benchmarks"
+        git push
