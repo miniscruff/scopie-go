@@ -22,6 +22,8 @@ jobs:
     - name: Run benchmark and push
       run: |
         go test -bench . > BENCHMARKS.txt
+        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
         git add BENCHMARKS.txt
         git commit -m "Update benchmarks"
         git push
