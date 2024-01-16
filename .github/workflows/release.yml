@@ -20,7 +20,7 @@ jobs:
 
     - name: Get the latest version
       id: latest
-      uses: miniscruff/changie-action
+      uses: miniscruff/changie-action@v2
       with:
         version: latest
         args: latest
