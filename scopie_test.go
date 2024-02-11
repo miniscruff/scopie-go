@@ -2,13 +2,14 @@ package scopie
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"testing"
 
 	"github.com/miniscruff/scopie-go/then"
 )
 
-type testScenario struct {
+type testAllowedScenario struct {
 	ID        string            `json:"id"`
 	Actor     string            `json:"actor"`
 	Scopes    string            `json:"scopes"`
@@ -17,26 +18,39 @@ type testScenario struct {
 	Error     string            `json:"error"`
 }
 
+type testValidScenario struct {
+	ID    string `json:"id"`
+	Scope string `json:"scope"`
+	Error string `json:"error"`
+}
+
 type coreTestCase struct {
-	Version     string         `json:"version"`
-	Validations []testScenario `json:"validations"`
-	Benchmarks  []testScenario `json:"benchmarks"`
+	Version         string                `json:"version"`
+	IsAllowedTests  []testAllowedScenario `json:"isAllowedTests"`
+	ScopeValidTests []testValidScenario   `json:"scopeValidTests"`
+	Benchmarks      []testAllowedScenario `json:"benchmarks"`
 }
 
-func LoadScenarios(t testing.TB) coreTestCase {
+var testCases coreTestCase
+
+func TestMain(m *testing.M) {
 	testFile, err := os.Open("testdata/scopie_scenarios.json")
-	then.Nil(t, err)
+	if err != nil {
+		fmt.Println("unable to read scenarios", err)
+		os.Exit(1)
+	}
 
-	var tc coreTestCase
-	err = json.NewDecoder(testFile).Decode(&tc)
-	then.Nil(t, err)
+	err = json.NewDecoder(testFile).Decode(&testCases)
+	if err != nil {
+		fmt.Println("unable to decode scenarios", err)
+		os.Exit(1)
+	}
 
-	return tc
+	os.Exit(m.Run())
 }
 
-func Test_Validations(t *testing.T) {
-	tc := LoadScenarios(t)
-	for _, scenario := range tc.Validations {
+func Test_IsAllowed(t *testing.T) {
+	for _, scenario := range testCases.IsAllowedTests {
 		t.Run(scenario.ID, func(t *testing.T) {
 			res, err := IsAllowed(scenario.Variables, scenario.Scopes, scenario.Actor)
 			if scenario.Error != "" {
@@ -49,10 +63,25 @@ func Test_Validations(t *testing.T) {
 		})
 	}
 
-	for _, scenario := range tc.Benchmarks {
+	// Also run our benchmarks as test cases separate from running benchmarks
+	for _, scenario := range testCases.Benchmarks {
 		t.Run(scenario.ID, func(t *testing.T) {
 			_, err := IsAllowed(scenario.Variables, scenario.Scopes, scenario.Actor)
 			then.Nil(t, err)
+		})
+	}
+}
+
+func Test_ScopeValid(t *testing.T) {
+	for _, scenario := range testCases.ScopeValidTests {
+		t.Run(scenario.ID, func(t *testing.T) {
+			err := ValidateScope(scenario.Scope)
+			if scenario.Error == "" {
+				then.Nil(t, err)
+			} else {
+				then.NotNil(t, err)
+				then.Equals(t, scenario.Error, err.Error())
+			}
 		})
 	}
 }
@@ -172,8 +201,7 @@ func Test_CompareStringsAfterIndexes_WithVar(t *testing.T) {
 }
 
 func Benchmark_Validations(b *testing.B) {
-	tc := LoadScenarios(b)
-	for _, scenario := range tc.Benchmarks {
+	for _, scenario := range testCases.Benchmarks {
 		b.Run(scenario.ID, func(b *testing.B) {
 			b.ReportAllocs()
 			for i := 0; i < b.N; i++ {
