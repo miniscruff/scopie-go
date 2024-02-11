@@ -1,6 +1,8 @@
 # Scopie
 
-not prod ready
+_not production ready_
+
+Go implementation of [scopie](https://github.com/miniscruff/scopie).
 
 ## Basic Example
 ```go
@@ -10,7 +12,9 @@ import (
 )
 
 func main() {
-    result, err := scopie.Process(
+    allowed, err := scopie.IsAllowed(
+        // optional variable values if we used any @vars
+        map[string]string{},
         // an example user scope
         "allow/blog/post/create",
         // what our request requires
@@ -23,7 +27,7 @@ func main() {
     }
 
     // Check the result to see if we can do this action.
-    if result == scopie.ResultDeny {
+    if !allowed {
         slog.Error("unauthorized")
         return
     }
