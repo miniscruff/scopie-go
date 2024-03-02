@@ -198,6 +198,7 @@ func compareFrom(
 			return aIndex, bIndex, false, nil
 		} else if (*aValue)[aSlider] == ArraySeperator {
 			wasArray = true
+
 			if (*aValue)[aLeft] == VariablePrefix {
 				return 0, 0, false, fmt.Errorf(fmtAllowedErrVarInArray, aLeft, (*aValue)[aLeft+1:aSlider])
 			}
