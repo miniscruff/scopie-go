@@ -1,30 +1,38 @@
 package scopie
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 const (
 	BlockSeperator = byte('/')
-	ScopeSeperator = byte(',')
 	ArraySeperator = byte('|')
 	VariablePrefix = byte('@')
 	Wildcard       = byte('*')
 )
 
 const (
-	fmtAllowedErrInvalidChar     = "scopie-100 in %s@%d: invalid character '%s'"
-	fmtAllowedErrVarInArray      = "scopie-101 in actor@%d: variable '%s' found in array block"
-	fmtAllowedErrWildcardInArray = "scopie-102 in actor@%d: wildcard found in array block"
-	fmtAllowedErrSuperInArray    = "scopie-103 in actor@%d: super wildcard found in array block"
-	fmtAllowedErrVarNotFound     = "scopie-104 in actor@%d: variable '%s' not found"
-	fmtAllowedErrSuperNotLast    = "scopie-105 in actor@%d: super wildcard not in the last block"
-	fmtAllowedErrEmpty           = "scopie-106 in %s@0: scope was empty"
+	fmtAllowedInvalidChar = "scopie-100 in %s: invalid character '%s'"
+	fmtAllowedVarInArray  = "scopie-101 in actor: variable '%s' found in array block"
+	fmtAllowedVarNotFound = "scopie-104 in actor: variable '%s' not found"
 
-	fmtValidateErrInvalidChar     = "scopie-100@%d: invalid character '%s'"
-	fmtValidateErrVarInArray      = "scopie-101@%d: variable '%s' found in array block"
-	fmtValidateErrWildcardInArray = "scopie-102@%d: wildcard found in array block"
-	fmtValidateErrSuperInArray    = "scopie-103@%d: super wildcard found in array block"
-	fmtValidateErrSuperNotLast    = "scopie-105@%d: super wildcard not in the last block"
-	fmtValidateErrEmpty           = "scopie-106@%d: scope was empty"
+	fmtValidateVarInArray  = "scopie-101: variable '%s' found in array block"
+	fmtValidateInvalidChar = "scopie-100: invalid character '%s'"
+)
+
+var (
+	errAllowedSuperNotLast      = errors.New("scopie-105 in actor: super wildcard not in the last block")
+	errAllowedSuperInArray      = errors.New("scopie-103 in actor: super wildcard found in array block")
+	errAllowedWildcardInArray   = errors.New("scopie-102 in actor: wildcard found in array block")
+	errAllowedActionScopesEmpty = errors.New("scopie-106: action scopes was empty")
+	errAllowedActionScopeEmpty  = errors.New("scopie-106: action scope was empty")
+	errAllowedActorRuleEmpty    = errors.New("scopie-106: actor rule was empty")
+
+	errValidateWildcardInArray = errors.New("scopie-102: wildcard found in array block")
+	errValidateSuperInArray    = errors.New("scopie-103: super wildcard found in array block")
+	errValidateSuperNotLast    = errors.New("scopie-105: super wildcard not in the last block")
+	errValidateEmpty           = errors.New("scopie-106: scope was empty")
 )
 
 // IsAllowedFunc is a type wrapper for IsAllowed that can be used as
@@ -36,63 +44,47 @@ type IsAllowedFunc func(map[string]string, string, string) (bool, error)
 type ValidateScopeFunc func(string) error
 
 // IsAllowed returns whether or not the required role scopes are fulfilled by our actor scopes.
-func IsAllowed(vars map[string]string, requiredScopes, actorScopes string) (bool, error) {
-	if requiredScopes == "" {
-		return false, fmt.Errorf(fmtAllowedErrEmpty, "scopes")
+func IsAllowed(actionScopes, actorRules []string, vars map[string]string) (bool, error) {
+	if len(actionScopes) == 0 {
+		return false, errAllowedActionScopesEmpty
 	}
 
-	if actorScopes == "" {
-		return false, fmt.Errorf(fmtAllowedErrEmpty, "actor")
+	if len(actorRules) == 0 {
+		return false, nil
 	}
 
-	actorIndex := 0
-	actorLeft := 0
 	hasBeenAllowed := false
 
-	for actorLeft < len(actorScopes) {
-		isAllowBlock := actorScopes[actorLeft] == 'a'
+	for _, actorRule := range actorRules {
+		if len(actorRule) == 0 {
+			return false, errAllowedActorRuleEmpty
+		}
+
+		actorRule := actorRule
+
+		isAllowBlock := actorRule[0] == 'a'
 		if isAllowBlock && hasBeenAllowed {
-			actorLeft = jumpAfterSeperator(&actorScopes, actorLeft, ScopeSeperator)
 			continue
 		}
 
-		actorLeft = jumpAfterSeperator(&actorScopes, actorLeft, BlockSeperator)
-		actorIndex = actorLeft
-		ruleLeft := 0
+		for _, actionScope := range actionScopes {
+			if len(actionScope) == 0 {
+				return false, errAllowedActionScopeEmpty
+			}
 
-		for ruleLeft < len(requiredScopes) {
-			actorNext, ruleNext, matched, err := compareFrom(&actorScopes, actorLeft, &requiredScopes, ruleLeft, vars)
+			actionScope := actionScope
+
+			match, err := compareActorToAction(&actorRule, &actionScope, vars)
 			if err != nil {
 				return false, err
 			}
 
-			if matched {
-				actorLeft = actorNext
-				ruleLeft = ruleNext
-
-				endOfActor := actorLeft >= len(actorScopes) || actorScopes[actorLeft-1] == ScopeSeperator
-				endOfRequired := ruleLeft >= len(requiredScopes) || requiredScopes[ruleLeft-1] == ScopeSeperator
-
-				// if we are at the end of the actor and of the required scope
-				if endOfActor && endOfRequired {
-					if isAllowBlock {
-						hasBeenAllowed = true
-						actorLeft = jumpAfterSeperator(&actorScopes, actorLeft, ScopeSeperator)
-					} else {
-						return false, nil
-					}
-
-					break
-				} else if endOfActor != endOfRequired {
-					break
-				}
-			} else {
-				ruleLeft = jumpAfterSeperator(&requiredScopes, ruleLeft, ScopeSeperator)
-				actorLeft = actorIndex
+			if match && isAllowBlock {
+				hasBeenAllowed = true
+			} else if match && !isAllowBlock {
+				return false, nil
 			}
 		}
-
-		actorLeft = jumpAfterSeperator(&actorScopes, actorLeft, ScopeSeperator)
 	}
 
 	return hasBeenAllowed, nil
@@ -100,7 +92,7 @@ func IsAllowed(vars map[string]string, requiredScopes, actorScopes string) (bool
 
 func ValidateScope(scope string) error {
 	if scope == "" {
-		return fmt.Errorf(fmtValidateErrEmpty, 0)
+		return errValidateEmpty
 	}
 
 	inArray := false
@@ -118,185 +110,153 @@ func ValidateScope(scope string) error {
 
 		if inArray {
 			if scope[i] == Wildcard && i < len(scope)-1 && scope[i+1] == Wildcard {
-				return fmt.Errorf(fmtValidateErrSuperInArray, i)
+				return errValidateSuperInArray
 			}
 
 			if scope[i] == Wildcard {
-				return fmt.Errorf(fmtValidateErrWildcardInArray, i)
+				return errValidateWildcardInArray
 			}
 
 			if scope[i] == VariablePrefix {
-				end := jumpEndOfArrayElement(&scope, i)
-				return fmt.Errorf(fmtValidateErrVarInArray, i, scope[i+1:end])
+				end := endOfArrayElement(&scope, i)
+				return fmt.Errorf(fmtValidateVarInArray, scope[i+1:end])
 			}
 		}
 
 		if !isValidCharacter(scope[i]) {
-			return fmt.Errorf(fmtValidateErrInvalidChar, i, string(scope[i]))
+			return fmt.Errorf(fmtValidateInvalidChar, string(scope[i]))
 		}
 
-		if scope[i] == Wildcard && i < len(scope)-1 && scope[i+1] == Wildcard &&
-			i < len(scope)-2 && scope[i+2] != ScopeSeperator {
-			return fmt.Errorf(fmtValidateErrSuperNotLast, i)
+		if scope[i] == Wildcard && i < len(scope)-1 && scope[i+1] == Wildcard && i < len(scope)-2 {
+			return errValidateSuperNotLast
 		}
 	}
 
 	return nil
 }
 
-func compareFrom(
-	aValue *string,
-	aIndex int,
-	bValue *string,
-	bIndex int,
-	vars map[string]string,
-) (int, int, bool, error) {
-	// Super wildcard is just two wildcards
-	if (*aValue)[aIndex] == Wildcard && aIndex < len(*aValue)-1 && (*aValue)[aIndex+1] == Wildcard {
-		if aIndex+2 < len(*aValue) && (*aValue)[aIndex+2] != ScopeSeperator {
-			return 0, 0, false, fmt.Errorf(fmtAllowedErrSuperNotLast, aIndex)
-		}
-
-		newAIndex := jumpAfterSeperator(aValue, aIndex, ScopeSeperator)
-		newBIndex := jumpAfterSeperator(bValue, bIndex, ScopeSeperator)
-
-		return newAIndex, newBIndex, true, nil
-	}
-
-	if (*aValue)[aIndex] == Wildcard {
-		newAIndex := jumpAfterSeperator(aValue, aIndex, BlockSeperator)
-		newBIndex := jumpAfterSeperator(bValue, bIndex, BlockSeperator)
-
-		return newAIndex, newBIndex, true, nil
-	}
-
-	bSlider := bIndex
-	for ; bSlider < len(*bValue); bSlider++ {
-		if (*bValue)[bSlider] == BlockSeperator || (*bValue)[bSlider] == ScopeSeperator {
-			break
-		} else if !isValidCharacter((*bValue)[bSlider]) {
-			invalidChar := string((*bValue)[bSlider])
-			return 0, 0, false, fmt.Errorf(fmtAllowedErrInvalidChar, "scopes", bSlider, invalidChar)
-		}
-	}
-
-	aLeft := aIndex
-	aSlider := aIndex
-	wasArray := false
-
-	for ; aSlider < len(*aValue); aSlider++ {
-		if (*aValue)[aSlider] == BlockSeperator || (*aValue)[aSlider] == ScopeSeperator {
-			match, err := compareChunk(aValue, aLeft, aSlider, bValue, bIndex, bSlider, vars)
-			if err != nil {
-				return 0, 0, false, err
-			}
-
-			if match {
-				return aSlider + 1, bSlider + 1, true, nil
-			}
-
-			return aIndex, bIndex, false, nil
-		} else if (*aValue)[aSlider] == ArraySeperator {
-			wasArray = true
-
-			if (*aValue)[aLeft] == VariablePrefix {
-				return 0, 0, false, fmt.Errorf(fmtAllowedErrVarInArray, aLeft, (*aValue)[aLeft+1:aSlider])
-			}
-
-			if (*aValue)[aLeft] == Wildcard {
-				if aLeft < len(*aValue)-1 && (*aValue)[aLeft+1] == Wildcard {
-					return 0, 0, false, fmt.Errorf(fmtAllowedErrSuperInArray, aLeft)
-				}
-
-				return 0, 0, false, fmt.Errorf(fmtAllowedErrWildcardInArray, aLeft)
-			}
-
-			match, _ := compareChunk(aValue, aLeft, aSlider, bValue, bIndex, bSlider, nil)
-			if match {
-				return jumpBlockOrScopeSeperator(aValue, aSlider), bSlider + 1, true, nil
-			}
-
-			// go to the next array value
-			aLeft = aSlider + 1
-			aSlider += 1
-		} else if !isValidCharacter((*aValue)[aSlider]) {
-			return 0, 0, false, fmt.Errorf(fmtAllowedErrInvalidChar, "actor", aSlider, string((*aValue)[aSlider]))
-		}
-	}
-
-	if wasArray {
-		if (*aValue)[aLeft] == VariablePrefix {
-			return 0, 0, false, fmt.Errorf(fmtAllowedErrVarInArray, aLeft, (*aValue)[aLeft+1:aSlider])
-		}
-
-		if (*aValue)[aLeft] == Wildcard {
-			if aLeft < len(*aValue)-1 && (*aValue)[aLeft+1] == Wildcard {
-				return 0, 0, false, fmt.Errorf(fmtAllowedErrSuperInArray, aLeft)
-			}
-
-			return 0, 0, false, fmt.Errorf(fmtAllowedErrWildcardInArray, aLeft)
-		}
-	}
-
-	match, err := compareChunk(aValue, aLeft, aSlider, bValue, bIndex, bSlider, vars)
-	if err != nil {
-		return 0, 0, false, err
-	}
-
-	if match {
-		return aSlider + 1, bSlider + 1, true, nil
-	}
-
-	return aIndex, bIndex, false, nil
-}
-
-func compareChunk(
-	aValue *string, aLeft, aSlider int,
-	bValue *string, bLeft, bSlider int,
+func compareActorToAction(
+	actor *string,
+	action *string,
 	vars map[string]string,
 ) (bool, error) {
-	if (*aValue)[aLeft] == VariablePrefix {
-		key := (*aValue)[aLeft+1 : aSlider]
+	// Skip the allow and deny prefix for actors
+	actorLeft, _, _ := endOfBlock(actor, 0, "actor")
+
+	actorLeft += 1 // don't forget to skip the slash
+	actionLeft := 0
+
+	for actorLeft < len(*actor) || actionLeft < len(*action) {
+		// In case one is longer then the other
+		if (actorLeft < len(*actor)) != (actionLeft < len(*action)) {
+			return false, nil
+		}
+
+		actionSlider, _, err := endOfBlock(action, actionLeft, "action")
+		if err != nil {
+			return false, err
+		}
+
+		actorSlider, actorArray, err := endOfBlock(actor, actorLeft, "actor")
+		if err != nil {
+			return false, err
+		}
+
+		// Super wildcards are checked here as it skips the who rest of the checks.
+		if actorSlider-actorLeft == 2 && (*actor)[actorLeft] == Wildcard && (*actor)[actorLeft+1] == Wildcard {
+			if len(*actor) > actorSlider {
+				return false, errAllowedSuperNotLast
+			}
+
+			return true, nil
+		} else {
+			match, err := compareBlock(actor, actorLeft, actorSlider, actorArray, action, actionLeft, actionSlider, vars)
+			if err != nil {
+				return false, err
+			}
+
+			if !match {
+				return false, nil
+			}
+		}
+
+		actionLeft = actionSlider + 1
+		actorLeft = actorSlider + 1
+	}
+
+	return true, nil
+}
+
+func compareBlock(
+	actor *string, actorLeft, actorSlider int, actorArray bool,
+	action *string, actionLeft, actionSlider int,
+	vars map[string]string,
+) (bool, error) {
+	if (*actor)[actorLeft] == VariablePrefix {
+		key := (*actor)[actorLeft+1 : actorSlider]
 		varValue, found := vars[key]
 
 		if !found {
-			return false, fmt.Errorf(fmtAllowedErrVarNotFound, aLeft, key)
+			return false, fmt.Errorf(fmtAllowedVarNotFound, key)
 		}
 
-		return varValue == (*bValue)[bLeft:bSlider], nil
+		return varValue == (*action)[actionLeft:actionSlider], nil
 	}
 
-	if aSlider-aLeft != bSlider-bLeft {
+	if actorSlider-actorLeft == 1 && (*actor)[actorLeft] == Wildcard {
+		return true, nil
+	}
+
+	if actorArray {
+		for actorLeft < actorSlider {
+			arrayRight := endOfArrayElement(actor, actorLeft)
+
+			if (*actor)[actorLeft] == VariablePrefix {
+				key := (*actor)[actorLeft+1 : arrayRight]
+				return false, fmt.Errorf(fmtAllowedVarInArray, key)
+			}
+
+			if (*actor)[actorLeft] == Wildcard {
+				if arrayRight-actorLeft > 1 && (*actor)[actorLeft+1] == Wildcard {
+					return false, errAllowedSuperInArray
+				}
+
+				return false, errAllowedWildcardInArray
+			}
+
+			if (*actor)[actorLeft:arrayRight] == (*action)[actionLeft:actionSlider] {
+				return true, nil
+			}
+
+			actorLeft = arrayRight + 1
+		}
+
 		return false, nil
 	}
 
-	return (*aValue)[aLeft:aSlider] == (*bValue)[bLeft:bSlider], nil
+	return (*actor)[actorLeft:actorSlider] == (*action)[actionLeft:actionSlider], nil
 }
 
-func jumpAfterSeperator(value *string, start int, sep byte) int {
-	for i := start + 1; i < len(*value); i++ {
-		if (*value)[i] == sep {
-			return i + 1
+func endOfBlock(value *string, start int, category string) (int, bool, error) {
+	isArray := false
+
+	for i := start; i < len(*value); i++ {
+		if (*value)[i] == ArraySeperator {
+			isArray = true
+		} else if (*value)[i] == BlockSeperator {
+			return i, isArray, nil
+		} else if !isValidCharacter((*value)[i]) {
+			invalidChar := string((*value)[i])
+			return 0, false, fmt.Errorf(fmtAllowedInvalidChar, category, invalidChar)
 		}
 	}
 
-	return len(*value)
+	return len(*value), isArray, nil
 }
 
-func jumpBlockOrScopeSeperator(value *string, start int) int {
-	for i := start + 1; i < len(*value); i++ {
-		if (*value)[i] == BlockSeperator || (*value)[i] == ScopeSeperator {
-			return i + 1
-		}
-	}
-
-	return len(*value)
-}
-
-func jumpEndOfArrayElement(value *string, start int) int {
+func endOfArrayElement(value *string, start int) int {
 	for i := start + 1; i < len(*value); i++ {
 		if (*value)[i] == BlockSeperator ||
-			(*value)[i] == ScopeSeperator ||
 			(*value)[i] == ArraySeperator {
 			return i
 		}

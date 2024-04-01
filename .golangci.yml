@@ -1,8 +1,6 @@
 linters-settings:
   exhaustive:
     default-signifies-exhaustive: false
-  gci:
-    local-prefixes: github.com/miniscruff/scopie-go
   goconst:
     min-len: 5
     min-occurrences: 5
@@ -11,7 +9,7 @@ linters-settings:
   golint:
     min-confidence: 0
   govet:
-    check-shadowing: true
+    shadow: true
   misspell:
     locale: US
   nolintlint:
