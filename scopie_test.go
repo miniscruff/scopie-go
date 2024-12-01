@@ -165,3 +165,18 @@ func Test_CompareActorToRule(t *testing.T) {
 		})
 	}
 }
+
+func ExampleIsAllowed() {
+	userScopes := []string{"allow/blog/create|update"}
+
+	allowed, err := IsAllowed([]string{"blog/create"}, userScopes, nil)
+	if err != nil {
+		panic("invalid scopes or rules")
+	}
+
+	if !allowed {
+		panic("can not create a new blog")
+	}
+
+	// create the blog here
+}

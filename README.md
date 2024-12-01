@@ -1,37 +1,69 @@
 # Scopie
 
-_not production ready_
+[![Go Reference](https://pkg.go.dev/badge/github.com/miniscruff/scopie-go.svg)](https://pkg.go.dev/github.com/miniscruff/scopie-go)
 
 Go implementation of [scopie](https://github.com/miniscruff/scopie).
 
-## Basic Example
+## Example
+
 ```go
 import (
-    "log/slog"
-    scopie "github.com/miniscruff/scopie-go"
+    "errors"
+    "github.com/miniscruff/scopie-go"
 )
 
-func main() {
-    allowed, err := scopie.IsAllowed(
-        // optional variable values if we used any @vars
-        map[string]string{},
-        // an example user scope
-        "allow/blog/post/create",
-        // what our request requires
-        "blog/post/create",
-    )
-    // If there was an error parsing a scope or rule.
+type User struct {
+    Scopes []string
+}
+
+type BlogPost struct {
+    Author  User
+    Content string
+}
+
+var userStore map[string]User = map[string]User{
+    "elsa": User{
+        Scopes: []string{"allow/blog/create|update"},
+    },
+    "belle": User{
+        Scopes: []string{"allow/blog/create"},
+    },
+}
+var blogStore map[string]BlogPost = map[string]BlogPost{}
+
+func createBlog(username, blogSlug, blogContent string) error {
+    user := users[username]
+    allowed, err := scopie.IsAllowed([]string{"blog/create"}, user.scopes, nil)
     if err != nil {
-        slog.Error("processing scopes", "error", err.Error())
-        return
+        return err
     }
 
-    // Check the result to see if we can do this action.
     if !allowed {
-        slog.Error("unauthorized")
-        return
+        return errors.New("not allowed to create a blog post")
     }
 
-    // User is allowed to create a blog post
+    blogStore[blogSlug] = BlogPost{
+        Author: user,
+        Content: blogContent,
+    }
+    return nil
+}
+
+func updateBlog(username, blogSlug, blogContent string) error {
+    user := users[username]
+    allowed, err := scopie.IsAllowed([]string{"blog/update"}, user.scopes, nil) {
+    if err != nil {
+        return err
+    }
+
+    if !allowed {
+        return errors.New("not allowed to update this blog post")
+    }
+
+    blogPosts[blogSlug] = BlogPost{
+        author: user,
+        content: blogContent,
+    }
+    return nil
 }
 ```
