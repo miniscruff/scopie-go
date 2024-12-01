@@ -1,28 +1,2 @@
-goos: linux
-goarch: amd64
-pkg: github.com/miniscruff/scopie-go
-cpu: AMD EPYC 7763 64-Core Processor                
-Benchmark_Validations/allow,1actor,1rule,1block1length-4         	 3306140	       364.3 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/deny,1actor,1rule,1block1length-4          	 3361849	       357.5 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/allow,5actor,3scopes,3blocks10length,best-4         	 2139602	       545.5 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/allow,5actor,3scopes,3blocks10length,worst-4        	 1000000	      1192 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/deny,5actor,3scopes,3blocks10length,best-4          	 2616547	       457.0 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/deny,5actor,3scopes,3blocks10length,worst-4         	  986960	      1195 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/allow,2actor,1rule,3block5length,3array,best-4      	 2423792	       491.7 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/allow,2actor,1rule,3block5length,3array,worst-4     	 2044743	       587.0 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/deny,2actor,1rule,3block5length,3array,best-4       	 2638484	       453.8 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/deny,2actor,1rule,3block5length,3array,worst-4      	 2008450	       598.3 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/allow,3actor,1rule,3block5length,3variables,best-4  	 2357925	       510.5 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/allow,3actor,1rule,3block5length,3variables,worst-4 	 2067686	       579.1 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/deny,2actor,1rule,3block5length,3variables,best-4   	 2509825	       478.5 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/deny,2actor,1rule,3block5length,3variables,best#01-4         	 2097422	       570.0 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/allow,3actor,1rule,3block5length,wildcard,best-4             	 2754549	       435.4 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/allow,3actor,1rule,3block5length,wildcard,worst-4            	 2396664	       500.6 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/deny,2actor,1rule,3block5length,wildcard,best-4              	 2973751	       403.6 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/deny,2actor,1rule,3block5length,wildcard,best#01-4           	 2435013	       493.9 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/allow,3actor,1rule,3block5length,superwildcard,best-4        	 2858996	       418.6 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/allow,3actor,1rule,3block5length,superwildcard,worst-4       	 2458032	       488.1 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/deny,2actor,1rule,3block5length,superwildcard,best-4         	 3108867	       385.5 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/deny,2actor,1rule,3block5length,superwildcard,best#01-4      	 2498400	       481.1 ns/op	       0 B/op	       0 allocs/op
 PASS
-ok  	github.com/miniscruff/scopie-go	36.101s
+ok  	github.com/miniscruff/scopie-go	0.003s
