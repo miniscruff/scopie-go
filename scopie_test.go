@@ -166,6 +166,18 @@ func Test_CompareActorToRule(t *testing.T) {
 	}
 }
 
+func Benchmark_Validations(b *testing.B) {
+	for _, scenario := range testCases.Benchmarks {
+		b.Run(scenario.ID, func(b *testing.B) {
+			b.ReportAllocs()
+			for i := 0; i < b.N; i++ {
+				_, err := IsAllowed(scenario.ActionScopes, scenario.ActorRules, scenario.Variables)
+				then.Nil(b, err)
+			}
+		})
+	}
+}
+
 func ExampleIsAllowed() {
 	userScopes := []string{"allow/blog/create|update"}
 
