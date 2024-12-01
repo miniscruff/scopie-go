@@ -43,10 +43,3 @@ jobs:
     - name: Test
       run: go test -coverprofile=c.out ./...
 
-    - name: Coverage
-      uses: codecov/codecov-action@v5
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      with:
-        file: ./c.out
-        fail_ci_if_error: true
