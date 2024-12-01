@@ -20,5 +20,4 @@ bench: # Run benchmark test suite
 
 .PHONY: format
 format: # Run linter and formatters
-	goimports -w -local github.com/miniscruff/scopie-go .
-	golangci-lint run ./...
+	golangci-lint run --fix ./...

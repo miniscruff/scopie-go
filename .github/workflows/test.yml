@@ -26,7 +26,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v5
       with:
-        go-version: 1.21
+        go-version: 1.23
 
     - name: Check out code
       uses: actions/checkout@v4
@@ -36,7 +36,7 @@ jobs:
       with:
         # Required: the version of golangci-lint is required and must be specified
         # without patch version: we always use the latest patch version.
-        version: v1.57
+        version: v1.62
 
     - name: Test
       run: go test -coverprofile=c.out ./...
