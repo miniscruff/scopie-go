@@ -1,0 +1,29 @@
+version: 2
+
+updates:
+
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "friday"
+      time: "18:00"
+      timezone: "America/Los_Angeles"
+    labels:
+      - "skip changelog"
+      - "dependencies"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "friday"
+      time: "18:00"
+      timezone: "America/Los_Angeles"
+    labels:
+      - "skip changelog"
+      - "dependencies"
+    groups:
+      action-deps:
+        patterns:
+          - "*"
