@@ -1,8 +1,5 @@
 name: Generate release pull request
 
-permissions:
-  contents: write
-
 on:
   workflow_dispatch:
 
@@ -35,6 +32,7 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
         with:
+          token: ${{ secrets.GH_PAT }}
           title: Release ${{ steps.latest.outputs.output }}
           branch: release/${{ steps.latest.outputs.output }}
           commit-message: Release ${{ steps.latest.outputs.output }}
