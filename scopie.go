@@ -3,6 +3,7 @@ package scopie
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 const (
@@ -10,29 +11,32 @@ const (
 	ArraySeperator = byte('|')
 	VariablePrefix = byte('@')
 	Wildcard       = byte('*')
+
+	AllowPermission = "allow"
+	DenyPermission  = "deny"
 )
 
 const (
 	fmtAllowedInvalidChar = "scopie-100 in %s: invalid character '%s'"
-	fmtAllowedVarInArray  = "scopie-101 in actor: variable '%s' found in array block"
-	fmtAllowedVarNotFound = "scopie-104 in actor: variable '%s' not found"
+	fmtAllowedVarInArray  = "scopie-101: variable '%s' found in array block"
+	fmtAllowedVarNotFound = "scopie-104: variable '%s' not found"
 
 	fmtValidateVarInArray  = "scopie-101: variable '%s' found in array block"
 	fmtValidateInvalidChar = "scopie-100: invalid character '%s'"
 )
 
 var (
-	errAllowedSuperNotLast      = errors.New("scopie-105 in actor: super wildcard not in the last block")
-	errAllowedSuperInArray      = errors.New("scopie-103 in actor: super wildcard found in array block")
-	errAllowedWildcardInArray   = errors.New("scopie-102 in actor: wildcard found in array block")
-	errAllowedActionScopesEmpty = errors.New("scopie-106: action scopes was empty")
-	errAllowedActionScopeEmpty  = errors.New("scopie-106: action scope was empty")
-	errAllowedActorRuleEmpty    = errors.New("scopie-106: actor rule was empty")
+	errSuperNotLast      = errors.New("scopie-105: super wildcard not in the last block")
+	errSuperInArray      = errors.New("scopie-103: super wildcard found in array block")
+	errWildcardInArray   = errors.New("scopie-102: wildcard found in array block")
+	errActionScopesEmpty = errors.New("scopie-106 in action: scopes was empty")
+	errActionScopeEmpty  = errors.New("scopie-106 in action: scope was empty")
+	errActorRuleEmpty    = errors.New("scopie-106 in actor: rule was empty")
 
-	errValidateWildcardInArray = errors.New("scopie-102: wildcard found in array block")
-	errValidateSuperInArray    = errors.New("scopie-103: super wildcard found in array block")
-	errValidateSuperNotLast    = errors.New("scopie-105: super wildcard not in the last block")
-	errValidateEmpty           = errors.New("scopie-106: scope was empty")
+	// validation specific
+	errValidateScopeRulesEmpty = errors.New("scopie-106: scope or rule was empty")
+	errValidateNoScopeRules    = errors.New("scopie-106: scope or rule array was empty")
+	errValidateInconsistent    = errors.New("scopie-107: inconsistent array of scopes and rules")
 )
 
 // IsAllowedFunc is a type wrapper for IsAllowed that can be used as
@@ -46,7 +50,7 @@ type ValidateScopeFunc func(string) error
 // IsAllowed returns whether or not the required role scopes are fulfilled by our actor scopes.
 func IsAllowed(actionScopes, actorRules []string, vars map[string]string) (bool, error) {
 	if len(actionScopes) == 0 {
-		return false, errAllowedActionScopesEmpty
+		return false, errActionScopesEmpty
 	}
 
 	if len(actorRules) == 0 {
@@ -57,19 +61,19 @@ func IsAllowed(actionScopes, actorRules []string, vars map[string]string) (bool,
 
 	for _, actorRule := range actorRules {
 		if len(actorRule) == 0 {
-			return false, errAllowedActorRuleEmpty
+			return false, errActorRuleEmpty
 		}
 
 		actorRule := actorRule
 
-		isAllowBlock := actorRule[0] == 'a'
+		isAllowBlock := strings.HasPrefix(actorRule, AllowPermission)
 		if isAllowBlock && hasBeenAllowed {
 			continue
 		}
 
 		for _, actionScope := range actionScopes {
 			if len(actionScope) == 0 {
-				return false, errAllowedActionScopeEmpty
+				return false, errActionScopeEmpty
 			}
 
 			actionScope := actionScope
@@ -90,45 +94,61 @@ func IsAllowed(actionScopes, actorRules []string, vars map[string]string) (bool,
 	return hasBeenAllowed, nil
 }
 
-func ValidateScope(scope string) error {
-	if scope == "" {
-		return errValidateEmpty
+func ValidateScopes(scopeOrRules []string) error {
+	if len(scopeOrRules) == 0 {
+		return errValidateNoScopeRules
 	}
 
-	inArray := false
+	isRules := strings.HasPrefix(scopeOrRules[0], AllowPermission) ||
+		strings.HasPrefix(scopeOrRules[0], DenyPermission)
 
-	for i := range scope {
-		if scope[i] == BlockSeperator {
-			inArray = false
-			continue
+	for _, scope := range scopeOrRules {
+		if scope == "" {
+			return errValidateScopeRulesEmpty
 		}
 
-		if scope[i] == ArraySeperator {
-			inArray = true
-			continue
+		scopeIsRule := strings.HasPrefix(scope, AllowPermission) ||
+			strings.HasPrefix(scope, DenyPermission)
+
+		if isRules != scopeIsRule {
+			return errValidateInconsistent
 		}
 
-		if inArray {
-			if scope[i] == Wildcard && i < len(scope)-1 && scope[i+1] == Wildcard {
-				return errValidateSuperInArray
+		inArray := false
+
+		for i := range scope {
+			if scope[i] == BlockSeperator {
+				inArray = false
+				continue
 			}
 
-			if scope[i] == Wildcard {
-				return errValidateWildcardInArray
+			if scope[i] == ArraySeperator {
+				inArray = true
+				continue
 			}
 
-			if scope[i] == VariablePrefix {
-				end := endOfArrayElement(&scope, i)
-				return fmt.Errorf(fmtValidateVarInArray, scope[i+1:end])
+			if inArray {
+				if scope[i] == Wildcard && i < len(scope)-1 && scope[i+1] == Wildcard {
+					return errSuperInArray
+				}
+
+				if scope[i] == Wildcard {
+					return errWildcardInArray
+				}
+
+				if scope[i] == VariablePrefix {
+					end := endOfArrayElement(&scope, i)
+					return fmt.Errorf(fmtValidateVarInArray, scope[i+1:end])
+				}
 			}
-		}
 
-		if !isValidCharacter(scope[i]) {
-			return fmt.Errorf(fmtValidateInvalidChar, string(scope[i]))
-		}
+			if !isValidCharacter(scope[i]) {
+				return fmt.Errorf(fmtValidateInvalidChar, string(scope[i]))
+			}
 
-		if scope[i] == Wildcard && i < len(scope)-1 && scope[i+1] == Wildcard && i < len(scope)-2 {
-			return errValidateSuperNotLast
+			if scope[i] == Wildcard && i < len(scope)-1 && scope[i+1] == Wildcard && i < len(scope)-2 {
+				return errSuperNotLast
+			}
 		}
 	}
 
@@ -165,7 +185,7 @@ func compareActorToAction(
 		// Super wildcards are checked here as it skips the who rest of the checks.
 		if actorSlider-actorLeft == 2 && (*actor)[actorLeft] == Wildcard && (*actor)[actorLeft+1] == Wildcard {
 			if len(*actor) > actorSlider {
-				return false, errAllowedSuperNotLast
+				return false, errSuperNotLast
 			}
 
 			return true, nil
@@ -218,10 +238,10 @@ func compareBlock(
 
 			if (*actor)[actorLeft] == Wildcard {
 				if arrayRight-actorLeft > 1 && (*actor)[actorLeft+1] == Wildcard {
-					return false, errAllowedSuperInArray
+					return false, errSuperInArray
 				}
 
-				return false, errAllowedWildcardInArray
+				return false, errWildcardInArray
 			}
 
 			if (*actor)[actorLeft:arrayRight] == (*action)[actionLeft:actionSlider] {

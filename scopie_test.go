@@ -19,22 +19,22 @@ type testAllowedScenario struct {
 }
 
 type testValidScenario struct {
-	ID    string `json:"id"`
-	Scope string `json:"scope"`
-	Error string `json:"error"`
+	ID     string   `json:"id"`
+	Scopes []string `json:"scopes"`
+	Error  string   `json:"error"`
 }
 
 type coreTestCase struct {
 	Version         string                `json:"version"`
 	IsAllowedTests  []testAllowedScenario `json:"isAllowedTests"`
-	ScopeValidTests []testValidScenario   `json:"scopeValidTests"`
+	ScopeValidTests []testValidScenario   `json:"validateScopesTests"`
 	Benchmarks      []testAllowedScenario `json:"benchmarks"`
 }
 
 var testCases coreTestCase
 
 func TestMain(m *testing.M) {
-	testFile, err := os.Open("testdata/scopie_scenarios.json")
+	testFile, err := os.Open("testdata/scenarios.json")
 	if err != nil {
 		fmt.Println("unable to read scenarios", err)
 		os.Exit(1)
@@ -78,7 +78,7 @@ func Test_IsAllowedBenchmarks(t *testing.T) {
 func Test_ScopeValid(t *testing.T) {
 	for _, scenario := range testCases.ScopeValidTests {
 		t.Run(scenario.ID, func(t *testing.T) {
-			err := ValidateScope(scenario.Scope)
+			err := ValidateScopes(scenario.Scopes)
 			if scenario.Error == "" {
 				then.Nil(t, err)
 			} else {
