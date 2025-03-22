@@ -10,12 +10,12 @@ import (
 )
 
 type testAllowedScenario struct {
-	ID           string            `json:"id"`
-	ActorRules   []string          `json:"actorRules"`
-	ActionScopes []string          `json:"actionScopes"`
-	Result       bool              `json:"result"`
-	Variables    map[string]string `json:"variables"`
-	Error        string            `json:"error"`
+	ID        string            `json:"id"`
+	Rules     []string          `json:"rules"`
+	Scopes    []string          `json:"scopes"`
+	Result    bool              `json:"result"`
+	Variables map[string]string `json:"variables"`
+	Error     string            `json:"error"`
 }
 
 type testValidScenario struct {
@@ -52,7 +52,7 @@ func TestMain(m *testing.M) {
 func Test_IsAllowed(t *testing.T) {
 	for _, scenario := range testCases.IsAllowedTests {
 		t.Run(scenario.ID, func(t *testing.T) {
-			res, err := IsAllowed(scenario.ActionScopes, scenario.ActorRules, scenario.Variables)
+			res, err := IsAllowed(scenario.Scopes, scenario.Rules, scenario.Variables)
 			if scenario.Error != "" {
 				then.NotNil(t, err)
 				then.Equals(t, scenario.Error, err.Error())
@@ -68,7 +68,7 @@ func Test_IsAllowedBenchmarks(t *testing.T) {
 	// Also run our benchmarks as test cases separate from running benchmarks
 	for _, scenario := range testCases.Benchmarks {
 		t.Run(scenario.ID, func(t *testing.T) {
-			res, err := IsAllowed(scenario.ActionScopes, scenario.ActorRules, scenario.Variables)
+			res, err := IsAllowed(scenario.Scopes, scenario.Rules, scenario.Variables)
 			then.Equals(t, scenario.Result, res)
 			then.Nil(t, err)
 		})
@@ -155,7 +155,7 @@ func Test_CompareActorToRule(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			tc := tc
 
-			doesMatch, err := compareActorToAction(&tc.actor, &tc.action, tc.vars)
+			doesMatch, err := compareRuleToScope(&tc.actor, &tc.action, tc.vars)
 			if tc.err == nil {
 				then.Nil(t, err)
 				then.Equals(t, tc.res, doesMatch)
@@ -171,8 +171,8 @@ func Benchmark_Validations(b *testing.B) {
 		b.Run(scenario.ID, func(b *testing.B) {
 			b.ReportAllocs()
 
-			for range b.N {
-				_, err := IsAllowed(scenario.ActionScopes, scenario.ActorRules, scenario.Variables)
+			for b.Loop() {
+				_, err := IsAllowed(scenario.Scopes, scenario.Rules, scenario.Variables)
 				then.Nil(b, err)
 			}
 		})

@@ -13,7 +13,7 @@ import (
 )
 
 type User struct {
-    Scopes []string
+    Rules []string
 }
 
 type BlogPost struct {
@@ -23,17 +23,17 @@ type BlogPost struct {
 
 var userStore map[string]User = map[string]User{
     "elsa": User{
-        Scopes: []string{"allow/blog/create|update"},
+        Rules: []string{"allow/blog/create|update"},
     },
     "belle": User{
-        Scopes: []string{"allow/blog/create"},
+        Rules: []string{"allow/blog/create"},
     },
 }
 var blogStore map[string]BlogPost = map[string]BlogPost{}
 
 func createBlog(username, blogSlug, blogContent string) error {
     user := users[username]
-    allowed, err := scopie.IsAllowed([]string{"blog/create"}, user.scopes, nil)
+    allowed, err := scopie.IsAllowed([]string{"blog/create"}, user.rules, nil)
     if err != nil {
         return err
     }
@@ -51,7 +51,7 @@ func createBlog(username, blogSlug, blogContent string) error {
 
 func updateBlog(username, blogSlug, blogContent string) error {
     user := users[username]
-    allowed, err := scopie.IsAllowed([]string{"blog/update"}, user.scopes, nil) {
+    allowed, err := scopie.IsAllowed([]string{"blog/update"}, user.rules, nil) {
     if err != nil {
         return err
     }
