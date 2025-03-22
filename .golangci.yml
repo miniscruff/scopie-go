@@ -15,10 +15,6 @@ linters-settings:
       - localmodule # Local module section: contains all local packages. This section is not present unless explicitly enabled.
   goimports:
     local-prefixes: github.com/miniscruff/scopie-go
-  golint:
-    min-confidence: 0
-  govet:
-    shadow: true
   misspell:
     locale: US
   nolintlint:
@@ -51,5 +47,6 @@ linters:
     - unconvert
     - unparam
     - unused
+    - usetesting
     - whitespace
     - wsl

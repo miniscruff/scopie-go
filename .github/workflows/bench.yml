@@ -8,7 +8,7 @@ on:
 
 jobs:
   release:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
 
     - name: Checkout
@@ -17,7 +17,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v5
       with:
-        go-version: 1.23
+        go-version: 1.24
 
     - name: Run benchmark and push
       run: |

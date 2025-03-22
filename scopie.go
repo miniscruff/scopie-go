@@ -26,12 +26,12 @@ const (
 )
 
 var (
-	errSuperNotLast      = errors.New("scopie-105: super wildcard not in the last block")
-	errSuperInArray      = errors.New("scopie-103: super wildcard found in array block")
-	errWildcardInArray   = errors.New("scopie-102: wildcard found in array block")
-	errActionScopesEmpty = errors.New("scopie-106 in action: scopes was empty")
-	errActionScopeEmpty  = errors.New("scopie-106 in action: scope was empty")
-	errActorRuleEmpty    = errors.New("scopie-106 in actor: rule was empty")
+	errSuperNotLast    = errors.New("scopie-105: super wildcard not in the last block")
+	errSuperInArray    = errors.New("scopie-103: super wildcard found in array block")
+	errWildcardInArray = errors.New("scopie-102: wildcard found in array block")
+	errScopesEmpty     = errors.New("scopie-106 in scope: scopes was empty")
+	errScopeEmpty      = errors.New("scopie-106 in scope: scope was empty")
+	errRuleEmpty       = errors.New("scopie-106 in rule: rule was empty")
 
 	// validation specific
 	errValidateScopeRulesEmpty = errors.New("scopie-106: scope or rule was empty")
@@ -48,20 +48,20 @@ type IsAllowedFunc func(map[string]string, string, string) (bool, error)
 type ValidateScopeFunc func(string) error
 
 // IsAllowed returns whether or not the required role scopes are fulfilled by our actor scopes.
-func IsAllowed(actionScopes, actorRules []string, vars map[string]string) (bool, error) {
-	if len(actionScopes) == 0 {
-		return false, errActionScopesEmpty
+func IsAllowed(scopes, rules []string, vars map[string]string) (bool, error) {
+	if len(scopes) == 0 {
+		return false, errScopesEmpty
 	}
 
-	if len(actorRules) == 0 {
+	if len(rules) == 0 {
 		return false, nil
 	}
 
 	hasBeenAllowed := false
 
-	for _, actorRule := range actorRules {
+	for _, actorRule := range rules {
 		if len(actorRule) == 0 {
-			return false, errActorRuleEmpty
+			return false, errRuleEmpty
 		}
 
 		actorRule := actorRule
@@ -71,14 +71,14 @@ func IsAllowed(actionScopes, actorRules []string, vars map[string]string) (bool,
 			continue
 		}
 
-		for _, actionScope := range actionScopes {
+		for _, actionScope := range scopes {
 			if len(actionScope) == 0 {
-				return false, errActionScopeEmpty
+				return false, errScopeEmpty
 			}
 
 			actionScope := actionScope
 
-			match, err := compareActorToAction(&actorRule, &actionScope, vars)
+			match, err := compareRuleToScope(&actorRule, &actionScope, vars)
 			if err != nil {
 				return false, err
 			}
@@ -94,6 +94,7 @@ func IsAllowed(actionScopes, actorRules []string, vars map[string]string) (bool,
 	return hasBeenAllowed, nil
 }
 
+// ValidateScopes returns an error if the scope or rules are invalid.
 func ValidateScopes(scopeOrRules []string) error {
 	if len(scopeOrRules) == 0 {
 		return errValidateNoScopeRules
@@ -155,42 +156,42 @@ func ValidateScopes(scopeOrRules []string) error {
 	return nil
 }
 
-func compareActorToAction(
-	actor *string,
-	action *string,
+func compareRuleToScope(
+	rule *string,
+	scope *string,
 	vars map[string]string,
 ) (bool, error) {
 	// Skip the allow and deny prefix for actors
-	actorLeft, _, _ := endOfBlock(actor, 0, "actor")
+	ruleLeft, _, _ := endOfBlock(rule, 0, "rule")
 
-	actorLeft += 1 // don't forget to skip the slash
-	actionLeft := 0
+	ruleLeft += 1 // don't forget to skip the slash
+	scopeLeft := 0
 
-	for actorLeft < len(*actor) || actionLeft < len(*action) {
+	for ruleLeft < len(*rule) || scopeLeft < len(*scope) {
 		// In case one is longer then the other
-		if (actorLeft < len(*actor)) != (actionLeft < len(*action)) {
+		if (ruleLeft < len(*rule)) != (scopeLeft < len(*scope)) {
 			return false, nil
 		}
 
-		actionSlider, _, err := endOfBlock(action, actionLeft, "action")
+		scopeSlider, _, err := endOfBlock(scope, scopeLeft, "scope")
 		if err != nil {
 			return false, err
 		}
 
-		actorSlider, actorArray, err := endOfBlock(actor, actorLeft, "actor")
+		ruleSlider, ruleArray, err := endOfBlock(rule, ruleLeft, "rule")
 		if err != nil {
 			return false, err
 		}
 
 		// Super wildcards are checked here as it skips the who rest of the checks.
-		if actorSlider-actorLeft == 2 && (*actor)[actorLeft] == Wildcard && (*actor)[actorLeft+1] == Wildcard {
-			if len(*actor) > actorSlider {
+		if ruleSlider-ruleLeft == 2 && (*rule)[ruleLeft] == Wildcard && (*rule)[ruleLeft+1] == Wildcard {
+			if len(*rule) > ruleSlider {
 				return false, errSuperNotLast
 			}
 
 			return true, nil
 		} else {
-			match, err := compareBlock(actor, actorLeft, actorSlider, actorArray, action, actionLeft, actionSlider, vars)
+			match, err := compareBlock(rule, ruleLeft, ruleSlider, ruleArray, scope, scopeLeft, scopeSlider, vars)
 			if err != nil {
 				return false, err
 			}
@@ -200,61 +201,61 @@ func compareActorToAction(
 			}
 		}
 
-		actionLeft = actionSlider + 1
-		actorLeft = actorSlider + 1
+		scopeLeft = scopeSlider + 1
+		ruleLeft = ruleSlider + 1
 	}
 
 	return true, nil
 }
 
 func compareBlock(
-	actor *string, actorLeft, actorSlider int, actorArray bool,
-	action *string, actionLeft, actionSlider int,
+	rule *string, ruleLeft, ruleSlider int, ruleArray bool,
+	scope *string, scopeLeft, scopeSlider int,
 	vars map[string]string,
 ) (bool, error) {
-	if (*actor)[actorLeft] == VariablePrefix {
-		key := (*actor)[actorLeft+1 : actorSlider]
+	if (*rule)[ruleLeft] == VariablePrefix {
+		key := (*rule)[ruleLeft+1 : ruleSlider]
 		varValue, found := vars[key]
 
 		if !found {
 			return false, fmt.Errorf(fmtAllowedVarNotFound, key)
 		}
 
-		return varValue == (*action)[actionLeft:actionSlider], nil
+		return varValue == (*scope)[scopeLeft:scopeSlider], nil
 	}
 
-	if actorSlider-actorLeft == 1 && (*actor)[actorLeft] == Wildcard {
+	if ruleSlider-ruleLeft == 1 && (*rule)[ruleLeft] == Wildcard {
 		return true, nil
 	}
 
-	if actorArray {
-		for actorLeft < actorSlider {
-			arrayRight := endOfArrayElement(actor, actorLeft)
+	if ruleArray {
+		for ruleLeft < ruleSlider {
+			arrayRight := endOfArrayElement(rule, ruleLeft)
 
-			if (*actor)[actorLeft] == VariablePrefix {
-				key := (*actor)[actorLeft+1 : arrayRight]
+			if (*rule)[ruleLeft] == VariablePrefix {
+				key := (*rule)[ruleLeft+1 : arrayRight]
 				return false, fmt.Errorf(fmtAllowedVarInArray, key)
 			}
 
-			if (*actor)[actorLeft] == Wildcard {
-				if arrayRight-actorLeft > 1 && (*actor)[actorLeft+1] == Wildcard {
+			if (*rule)[ruleLeft] == Wildcard {
+				if arrayRight-ruleLeft > 1 && (*rule)[ruleLeft+1] == Wildcard {
 					return false, errSuperInArray
 				}
 
 				return false, errWildcardInArray
 			}
 
-			if (*actor)[actorLeft:arrayRight] == (*action)[actionLeft:actionSlider] {
+			if (*rule)[ruleLeft:arrayRight] == (*scope)[scopeLeft:scopeSlider] {
 				return true, nil
 			}
 
-			actorLeft = arrayRight + 1
+			ruleLeft = arrayRight + 1
 		}
 
 		return false, nil
 	}
 
-	return (*actor)[actorLeft:actorSlider] == (*action)[actionLeft:actionSlider], nil
+	return (*rule)[ruleLeft:ruleSlider] == (*scope)[scopeLeft:scopeSlider], nil
 }
 
 func endOfBlock(value *string, start int, category string) (int, bool, error) {
