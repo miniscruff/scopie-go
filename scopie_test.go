@@ -180,9 +180,9 @@ func Benchmark_Validations(b *testing.B) {
 }
 
 func ExampleIsAllowed() {
-	userScopes := []string{"allow/blog/create|update"}
+	userRules := []string{"allow/blog/create|update"}
 
-	allowed, err := IsAllowed([]string{"blog/create"}, userScopes, nil)
+	allowed, err := IsAllowed([]string{"blog/create"}, userRules, nil)
 	if err != nil {
 		panic("invalid scopes or rules")
 	}
@@ -192,4 +192,15 @@ func ExampleIsAllowed() {
 	}
 
 	// create the blog here
+}
+
+func ExampleValidateScopes() {
+	userRules := []string{"allow/blog/create|update"}
+
+	err := ValidateScopes(userRules)
+	if err != nil {
+		panic("invalid scopes or rules")
+	}
+
+	// save rules
 }
