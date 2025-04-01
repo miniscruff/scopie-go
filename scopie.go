@@ -39,15 +39,39 @@ var (
 	errValidateInconsistent    = errors.New("scopie-107: inconsistent array of scopes and rules")
 )
 
-// IsAllowedFunc is a type wrapper for IsAllowed that can be used as
+// IsAllowedFunc is a type wrapper for [IsAllowed] that can be used as
 // a dependency.
 type IsAllowedFunc func(map[string]string, string, string) (bool, error)
 
-// ValidateScopeFunc is a type wrapper for ValidateScope that can be
+// ValidateScopeFunc is a type wrapper for [ValidateScopes] that can be
 // used as a dependency.
 type ValidateScopeFunc func(string) error
 
-// IsAllowed returns whether or not the required role scopes are fulfilled by our actor scopes.
+// IsAllowed returns whether or not the scopes are allowed with the given rules.
+// [Is Allowed Spec] is the function specification.
+//
+// Scopes specifies one or more scopes our actor must match.
+// When using more then one scope, they are treated as a series of OR conditions,
+// and an actor will be allowed if they match any of the scopes.
+//
+// Rules specifies one or more rules our requesting scopes has to have
+// to be allowed access.
+// An optional dictionary or map of variable to values.
+// Variable keys should not start with `@`
+//
+//	isAllowed, err := IsAllowed(
+//		[]string{"accounts/thor/edit",
+//		"allow/accounts/@username/*",
+//		map[string]string{"username": "thor"},
+//	)
+//	if err != nil {
+//		return fmt.Errorf("invalid scope or rule: %w", err)
+//	}
+//	if !isAllowed {
+//		return fmt.Errorf("unauthorized")
+//	}
+//
+// [Is Allowed Spec]: https://scopie.dev/specification/functions/#is-allowed
 func IsAllowed(scopes, rules []string, vars map[string]string) (bool, error) {
 	if len(scopes) == 0 {
 		return false, errScopesEmpty
@@ -94,7 +118,16 @@ func IsAllowed(scopes, rules []string, vars map[string]string) (bool, error) {
 	return hasBeenAllowed, nil
 }
 
-// ValidateScopes returns an error if the scope or rules are invalid.
+// ValidateScopes checks whether or not the given scopes or rules are valid given the
+// requirements outlined in the specification.
+// [Validate Scopes Spec] is the function specification.
+//
+//	err := ValidateScopes("allow/accounts/@username/*")
+//	if err != nil {
+//		return fmt.Errorf("scope is invalid: %w", err)
+//	}
+//
+// [Validate Scopes Spec]: https://scopie.dev/specification/functions/#validate-scopes
 func ValidateScopes(scopeOrRules []string) error {
 	if len(scopeOrRules) == 0 {
 		return errValidateNoScopeRules

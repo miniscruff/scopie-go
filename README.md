@@ -1,6 +1,7 @@
 # Scopie
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/miniscruff/scopie-go.svg)](https://pkg.go.dev/github.com/miniscruff/scopie-go)
+[![GitHub release](https://img.shields.io/github/v/release/miniscruff/scopie-go?style=for-the-badge&logo=github)](https://github.com/miniscruff/scopie-go/releases)
+[![Go Packge](https://img.shields.io/badge/Go-Reference-grey?style=for-the-badge&logo=go&logoColor=white&label=%20&labelColor=007D9C)](https://pkg.go.dev/github.com/miniscruff/scopie-go)
 
 Go implementation of [scopie](https://github.com/miniscruff/scopie).
 
