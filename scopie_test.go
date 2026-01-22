@@ -85,7 +85,7 @@ func Test_IsAllowedBenchmarks(t *testing.T) {
 func Test_ActionValid(t *testing.T) {
 	for _, scenario := range testCases.ActionValidTests {
 		t.Run(scenario.ID, func(t *testing.T) {
-			err := ValidateActions(scenario.Actions)
+			err := ValidateActions(scenario.Actions...)
 			if scenario.Error == "" {
 				then.Nil(t, err)
 			} else {
@@ -100,7 +100,7 @@ func Test_PermissionValid(t *testing.T) {
 	for _, scenario := range testCases.PermissionValidTests {
 		t.Run(scenario.ID, func(t *testing.T) {
 			t.Log(scenario.Permissions)
-			err := ValidatePermissions(scenario.Permissions)
+			err := ValidatePermissions(scenario.Permissions...)
 			if scenario.Error == "" {
 				then.Nil(t, err)
 			} else {

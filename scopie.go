@@ -38,39 +38,30 @@ var (
 
 	// validation specific
 	errValidateActionEmpty      = errors.New("scopie-106: action was empty")
-	errValidateActionsEmpty     = errors.New("scopie-106: actions array was empty")
+	errValidateActionsEmpty     = errors.New("scopie-106: action array was empty")
 	errValidatePermissionEmpty  = errors.New("scopie-106: permission was empty")
 	errValidatePermissionsEmpty = errors.New("scopie-106: permission array was empty")
 )
 
-// IsAllowedFunc is a type wrapper for [IsAllowed] that can be used as
-// a dependency.
+// IsAllowedFunc is a type wrapper for [IsAllowed] to be used a dependency.
 type IsAllowedFunc func(map[string]string, string, string) (bool, error)
 
-// ValidateScopeFunc is a type wrapper for [ValidateScopes] that can be
-// used as a dependency.
-// type ValidateScopeFunc func(string) error
+// ValidateActionsFunc is a type wrapper for [ValidateActions] to be used as a dependency.
+type ValidateActionsFunc func (actions []string) error
 
-// TODO: REWRITE
-// IsAllowed returns whether or not the scopes are allowed with the given rules.
-// [Is Allowed Spec] is the function specification.
-//
-// Scopes specifies one or more scopes our actor must match.
-// When using more then one scope, they are treated as a series of OR conditions,
-// and an actor will be allowed if they match any of the scopes.
-//
-// Rules specifies one or more rules our requesting scopes has to have
-// to be allowed access.
-// An optional dictionary or map of variable to values.
-// Variable keys should not start with `@`
+// ValidateActionsFunc is a type wrapper for [ValidatePermissions] to be used as a dependency.
+type ValidatePermissionsFunc func (permissions []string) error
+
+// IsAllowed returns whether or not the user with the given permissions are allowed to complete
+// the action. See [Is Allowed Spec] for additional details.
 //
 //	isAllowed, err := IsAllowed(
-//		[]string{"accounts/thor/edit",
-//		"allow/accounts/@username/*",
+//		[]string{"accounts/thor/edit"},
+//		"allow:accounts/@username/*",
 //		map[string]string{"username": "thor"},
 //	)
 //	if err != nil {
-//		return fmt.Errorf("invalid scope or rule: %w", err)
+//		return fmt.Errorf("invalid action or permission: %w", err)
 //	}
 //	if !isAllowed {
 //		return fmt.Errorf("unauthorized")
@@ -88,27 +79,26 @@ func IsAllowed(actions, permissions []string, vars map[string]string) (bool, err
 
 	hasBeenAllowed := false
 
-	for _, actorRule := range permissions {
-		if len(actorRule) == 0 {
+	for _, permission := range permissions {
+		if len(permission) == 0 {
 			return false, errPermissionEmpty
 		}
 
-		actorRule := actorRule
+		isAllowBlock := strings.HasPrefix(permission, AllowGrant)
+		if !isAllowBlock && !strings.HasPrefix(permission, DenyGrant) {
+			return false, errPermissionDoesNotStartWithGrant
+		}
 
-		// TODO: maybe don't just check allow as it could be invalid
-		isAllowBlock := strings.HasPrefix(actorRule, AllowGrant)
 		if isAllowBlock && hasBeenAllowed {
 			continue
 		}
 
-		for _, actionScope := range actions {
-			if len(actionScope) == 0 {
+		for _, action := range actions {
+			if len(action) == 0 {
 				return false, errActionEmpty
 			}
 
-			actionScope := actionScope
-
-			match, err := comparePermissionToAction(&actorRule, &actionScope, vars)
+			match, err := comparePermissionToAction(&permission, &action, vars)
 			if err != nil {
 				return false, err
 			}
@@ -124,18 +114,17 @@ func IsAllowed(actions, permissions []string, vars map[string]string) (bool, err
 	return hasBeenAllowed, nil
 }
 
-// TODO: we now have two separate validation funcs
-// ValidateScopes checks whether or not the given scopes or rules are valid given the
+// ValidateActions checks whether or not the given actions are valid given the
 // requirements outlined in the specification.
 // [Validate Scopes Spec] is the function specification.
 //
-//	err := ValidateScopes("allow/accounts/@username/*")
+//	err := ValidateActions("accounts/create")
 //	if err != nil {
-//		return fmt.Errorf("scope is invalid: %w", err)
+//		return fmt.Errorf("action is invalid: %w", err)
 //	}
 //
-// [Validate Scopes Spec]: https://scopie.dev/specification/functions/#validate-scopes
-func ValidateActions(actions []string) error {
+// [Validate Actions Spec]: https://scopie.dev/specification/functions/#validate-actions
+func ValidateActions(actions ...string) error {
 	if len(actions) == 0 {
 		return errValidateActionsEmpty
 	}
@@ -159,7 +148,18 @@ func ValidateActions(actions []string) error {
 	return nil
 }
 
-func ValidatePermissions(permissions []string) error {
+
+// ValidatePermissions checks whether or not the given permissions are valid given the
+// requirements outlined in the specification.
+// [Validate Permissions Spec] is the function specification.
+//
+//	err := ValidatePermissionsFunc("allow:accounts/read")
+//	if err != nil {
+//		return fmt.Errorf("action is invalid: %w", err)
+//	}
+//
+// [Validate Permissions Spec]: https://scopie.dev/specification/functions/#validate-permissions
+func ValidatePermissions(permissions ...string) error {
 	if len(permissions) == 0 {
 		return errValidatePermissionsEmpty
 	}
@@ -175,9 +175,6 @@ func ValidatePermissions(permissions []string) error {
 		if err != nil {
 			return errPermissionDoesNotStartWithGrant
 		}
-
-		// skip the separator
-		i++
 
 		for ; i < len(permission); i++ {
 			if permission[i] == BlockSeperator {
@@ -223,11 +220,8 @@ func comparePermissionToAction(
 	action *string,
 	vars map[string]string,
 ) (bool, error) {
-	// Skip the allow and deny prefix for permission
+	// skip grant error is pre-checked
 	permissionLeft, _ := skipGrant(permission, 0)
-	// TODO: handle the error above
-
-	permissionLeft += 1 // don't forget to skip the separator
 	actionLeft := 0
 
 	for permissionLeft < len(*permission) || actionLeft < len(*action) {
@@ -322,19 +316,17 @@ func compareBlock(
 }
 
 func skipGrant(value *string, start int) (int, error) {
-	// TODO: actually do this properly...
-	if strings.HasPrefix(*value, AllowGrant)
+	subStr := (*value)[start:]
 
-	for i := start; i < len(*value); i++ {
-		if (*value)[i] == GrantSeparator {
-			return i, nil
-		} else if !isValidCharacter((*value)[i]) {
-			invalidChar := string((*value)[i])
-			return 0, fmt.Errorf(fmtAllowedInvalidChar, "permission", invalidChar)
-		}
+	if strings.HasPrefix(subStr, DenyGrant) {
+		return 5, nil
 	}
 
-	return len(*value), nil
+	if strings.HasPrefix(subStr, AllowGrant) {
+		return 6, nil
+	}
+
+	return 0, errPermissionDoesNotStartWithGrant
 }
 
 func endOfBlock(value *string, start int, category string) (int, bool, error) {
@@ -356,8 +348,7 @@ func endOfBlock(value *string, start int, category string) (int, bool, error) {
 
 func endOfArrayElement(value *string, start int) int {
 	for i := start + 1; i < len(*value); i++ {
-		if (*value)[i] == BlockSeperator ||
-			(*value)[i] == ArraySeperator {
+		if (*value)[i] == BlockSeperator || (*value)[i] == ArraySeperator {
 			return i
 		}
 	}
