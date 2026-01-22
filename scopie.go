@@ -12,8 +12,9 @@ const (
 	VariablePrefix = byte('@')
 	Wildcard       = byte('*')
 
-	AllowPermission = "allow"
-	DenyPermission  = "deny"
+	AllowGrant     = "allow"
+	DenyGrant      = "deny"
+	GrantSeparator = byte(':')
 )
 
 const (
@@ -29,80 +30,77 @@ var (
 	errSuperNotLast    = errors.New("scopie-105: super wildcard not in the last block")
 	errSuperInArray    = errors.New("scopie-103: super wildcard found in array block")
 	errWildcardInArray = errors.New("scopie-102: wildcard found in array block")
-	errScopesEmpty     = errors.New("scopie-106 in scope: scopes was empty")
-	errScopeEmpty      = errors.New("scopie-106 in scope: scope was empty")
-	errRuleEmpty       = errors.New("scopie-106 in rule: rule was empty")
+	errActionsEmpty    = errors.New("scopie-106 in action: actions was empty")
+	errActionEmpty     = errors.New("scopie-106 in action: action was empty")
+	errPermissionEmpty = errors.New("scopie-106 in permission: permission was empty")
+
+	errPermissionDoesNotStartWithGrant = errors.New(
+		"scopie-107: permission does not start with a grant",
+	)
 
 	// validation specific
-	errValidateScopeRulesEmpty = errors.New("scopie-106: scope or rule was empty")
-	errValidateNoScopeRules    = errors.New("scopie-106: scope or rule array was empty")
-	errValidateInconsistent    = errors.New("scopie-107: inconsistent array of scopes and rules")
+	errValidateActionEmpty      = errors.New("scopie-106: action was empty")
+	errValidateActionsEmpty     = errors.New("scopie-106: action array was empty")
+	errValidatePermissionEmpty  = errors.New("scopie-106: permission was empty")
+	errValidatePermissionsEmpty = errors.New("scopie-106: permission array was empty")
 )
 
-// IsAllowedFunc is a type wrapper for [IsAllowed] that can be used as
-// a dependency.
+// IsAllowedFunc is a type wrapper for [IsAllowed] to be used a dependency.
 type IsAllowedFunc func(map[string]string, string, string) (bool, error)
 
-// ValidateScopeFunc is a type wrapper for [ValidateScopes] that can be
-// used as a dependency.
-type ValidateScopeFunc func(string) error
+// ValidateActionsFunc is a type wrapper for [ValidateActions] to be used as a dependency.
+type ValidateActionsFunc func(actions []string) error
 
-// IsAllowed returns whether or not the scopes are allowed with the given rules.
-// [Is Allowed Spec] is the function specification.
-//
-// Scopes specifies one or more scopes our actor must match.
-// When using more then one scope, they are treated as a series of OR conditions,
-// and an actor will be allowed if they match any of the scopes.
-//
-// Rules specifies one or more rules our requesting scopes has to have
-// to be allowed access.
-// An optional dictionary or map of variable to values.
-// Variable keys should not start with `@`
+// ValidateActionsFunc is a type wrapper for [ValidatePermissions] to be used as a dependency.
+type ValidatePermissionsFunc func(permissions []string) error
+
+// IsAllowed returns whether or not the user with the given permissions are allowed to complete
+// the action. See [Is Allowed Spec] for additional details.
 //
 //	isAllowed, err := IsAllowed(
-//		[]string{"accounts/thor/edit",
-//		"allow/accounts/@username/*",
+//		[]string{"accounts/thor/edit"},
+//		"allow:accounts/@username/*",
 //		map[string]string{"username": "thor"},
 //	)
 //	if err != nil {
-//		return fmt.Errorf("invalid scope or rule: %w", err)
+//		return fmt.Errorf("invalid action or permission: %w", err)
 //	}
 //	if !isAllowed {
 //		return fmt.Errorf("unauthorized")
 //	}
 //
 // [Is Allowed Spec]: https://scopie.dev/specification/functions/#is-allowed
-func IsAllowed(scopes, rules []string, vars map[string]string) (bool, error) {
-	if len(scopes) == 0 {
-		return false, errScopesEmpty
+func IsAllowed(actions, permissions []string, vars map[string]string) (bool, error) {
+	if len(actions) == 0 {
+		return false, errActionsEmpty
 	}
 
-	if len(rules) == 0 {
+	if len(permissions) == 0 {
 		return false, nil
 	}
 
 	hasBeenAllowed := false
 
-	for _, actorRule := range rules {
-		if len(actorRule) == 0 {
-			return false, errRuleEmpty
+	for _, permission := range permissions {
+		if len(permission) == 0 {
+			return false, errPermissionEmpty
 		}
 
-		actorRule := actorRule
+		isAllowBlock := strings.HasPrefix(permission, AllowGrant)
+		if !isAllowBlock && !strings.HasPrefix(permission, DenyGrant) {
+			return false, errPermissionDoesNotStartWithGrant
+		}
 
-		isAllowBlock := strings.HasPrefix(actorRule, AllowPermission)
 		if isAllowBlock && hasBeenAllowed {
 			continue
 		}
 
-		for _, actionScope := range scopes {
-			if len(actionScope) == 0 {
-				return false, errScopeEmpty
+		for _, action := range actions {
+			if len(action) == 0 {
+				return false, errActionEmpty
 			}
 
-			actionScope := actionScope
-
-			match, err := compareRuleToScope(&actorRule, &actionScope, vars)
+			match, err := comparePermissionToAction(&permission, &action, vars)
 			if err != nil {
 				return false, err
 			}
@@ -118,69 +116,100 @@ func IsAllowed(scopes, rules []string, vars map[string]string) (bool, error) {
 	return hasBeenAllowed, nil
 }
 
-// ValidateScopes checks whether or not the given scopes or rules are valid given the
+// ValidateActions checks whether or not the given actions are valid given the
 // requirements outlined in the specification.
 // [Validate Scopes Spec] is the function specification.
 //
-//	err := ValidateScopes("allow/accounts/@username/*")
+//	err := ValidateActions("accounts/create")
 //	if err != nil {
-//		return fmt.Errorf("scope is invalid: %w", err)
+//		return fmt.Errorf("action is invalid: %w", err)
 //	}
 //
-// [Validate Scopes Spec]: https://scopie.dev/specification/functions/#validate-scopes
-func ValidateScopes(scopeOrRules []string) error {
-	if len(scopeOrRules) == 0 {
-		return errValidateNoScopeRules
+// [Validate Actions Spec]: https://scopie.dev/specification/functions/#validate-actions
+func ValidateActions(actions ...string) error {
+	if len(actions) == 0 {
+		return errValidateActionsEmpty
 	}
 
-	isRules := strings.HasPrefix(scopeOrRules[0], AllowPermission) ||
-		strings.HasPrefix(scopeOrRules[0], DenyPermission)
-
-	for _, scope := range scopeOrRules {
-		if scope == "" {
-			return errValidateScopeRulesEmpty
+	for _, action := range actions {
+		if action == "" {
+			return errValidateActionEmpty
 		}
 
-		scopeIsRule := strings.HasPrefix(scope, AllowPermission) ||
-			strings.HasPrefix(scope, DenyPermission)
+		for i := range action {
+			if action[i] == BlockSeperator {
+				continue
+			}
 
-		if isRules != scopeIsRule {
-			return errValidateInconsistent
+			if !isValidLiteral(action[i]) {
+				return fmt.Errorf(fmtValidateInvalidChar, string(action[i]))
+			}
+		}
+	}
+
+	return nil
+}
+
+// ValidatePermissions checks whether or not the given permissions are valid given the
+// requirements outlined in the specification.
+// [Validate Permissions Spec] is the function specification.
+//
+//	err := ValidatePermissionsFunc("allow:accounts/read")
+//	if err != nil {
+//		return fmt.Errorf("action is invalid: %w", err)
+//	}
+//
+// [Validate Permissions Spec]: https://scopie.dev/specification/functions/#validate-permissions
+func ValidatePermissions(permissions ...string) error {
+	if len(permissions) == 0 {
+		return errValidatePermissionsEmpty
+	}
+
+	for _, permission := range permissions {
+		if permission == "" {
+			return errValidatePermissionEmpty
 		}
 
 		inArray := false
 
-		for i := range scope {
-			if scope[i] == BlockSeperator {
+		i, err := skipGrant(&permission, 0)
+		if err != nil {
+			return errPermissionDoesNotStartWithGrant
+		}
+
+		for ; i < len(permission); i++ {
+			if permission[i] == BlockSeperator {
 				inArray = false
 				continue
 			}
 
-			if scope[i] == ArraySeperator {
+			if permission[i] == ArraySeperator {
 				inArray = true
 				continue
 			}
 
 			if inArray {
-				if scope[i] == Wildcard && i < len(scope)-1 && scope[i+1] == Wildcard {
+				if permission[i] == Wildcard && i < len(permission)-1 &&
+					permission[i+1] == Wildcard {
 					return errSuperInArray
 				}
 
-				if scope[i] == Wildcard {
+				if permission[i] == Wildcard {
 					return errWildcardInArray
 				}
 
-				if scope[i] == VariablePrefix {
-					end := endOfArrayElement(&scope, i)
-					return fmt.Errorf(fmtValidateVarInArray, scope[i+1:end])
+				if permission[i] == VariablePrefix {
+					end := endOfArrayElement(&permission, i)
+					return fmt.Errorf(fmtValidateVarInArray, permission[i+1:end])
 				}
 			}
 
-			if !isValidCharacter(scope[i]) {
-				return fmt.Errorf(fmtValidateInvalidChar, string(scope[i]))
+			if !isValidCharacter(permission[i]) {
+				return fmt.Errorf(fmtValidateInvalidChar, string(permission[i]))
 			}
 
-			if scope[i] == Wildcard && i < len(scope)-1 && scope[i+1] == Wildcard && i < len(scope)-2 {
+			if permission[i] == Wildcard && i < len(permission)-1 && permission[i+1] == Wildcard &&
+				i < len(permission)-2 {
 				return errSuperNotLast
 			}
 		}
@@ -189,42 +218,54 @@ func ValidateScopes(scopeOrRules []string) error {
 	return nil
 }
 
-func compareRuleToScope(
-	rule *string,
-	scope *string,
+func comparePermissionToAction(
+	permission *string,
+	action *string,
 	vars map[string]string,
 ) (bool, error) {
-	// Skip the allow and deny prefix for actors
-	ruleLeft, _, _ := endOfBlock(rule, 0, "rule")
+	// skip grant error is pre-checked
+	permissionLeft, _ := skipGrant(permission, 0)
+	actionLeft := 0
 
-	ruleLeft += 1 // don't forget to skip the slash
-	scopeLeft := 0
-
-	for ruleLeft < len(*rule) || scopeLeft < len(*scope) {
+	for permissionLeft < len(*permission) || actionLeft < len(*action) {
 		// In case one is longer then the other
-		if (ruleLeft < len(*rule)) != (scopeLeft < len(*scope)) {
+		if (permissionLeft < len(*permission)) != (actionLeft < len(*action)) {
 			return false, nil
 		}
 
-		scopeSlider, _, err := endOfBlock(scope, scopeLeft, "scope")
+		actionSlider, _, err := endOfBlock(action, actionLeft, "action")
 		if err != nil {
 			return false, err
 		}
 
-		ruleSlider, ruleArray, err := endOfBlock(rule, ruleLeft, "rule")
+		permissionSlider, permissionArray, err := endOfBlock(
+			permission,
+			permissionLeft,
+			"permission",
+		)
 		if err != nil {
 			return false, err
 		}
 
 		// Super wildcards are checked here as it skips the who rest of the checks.
-		if ruleSlider-ruleLeft == 2 && (*rule)[ruleLeft] == Wildcard && (*rule)[ruleLeft+1] == Wildcard {
-			if len(*rule) > ruleSlider {
+		if permissionSlider-permissionLeft == 2 && (*permission)[permissionLeft] == Wildcard &&
+			(*permission)[permissionLeft+1] == Wildcard {
+			if len(*permission) > permissionSlider {
 				return false, errSuperNotLast
 			}
 
 			return true, nil
 		} else {
-			match, err := compareBlock(rule, ruleLeft, ruleSlider, ruleArray, scope, scopeLeft, scopeSlider, vars)
+			match, err := compareBlock(
+				permission,
+				permissionLeft,
+				permissionSlider,
+				permissionArray,
+				action,
+				actionLeft,
+				actionSlider,
+				vars,
+			)
 			if err != nil {
 				return false, err
 			}
@@ -234,61 +275,75 @@ func compareRuleToScope(
 			}
 		}
 
-		scopeLeft = scopeSlider + 1
-		ruleLeft = ruleSlider + 1
+		actionLeft = actionSlider + 1
+		permissionLeft = permissionSlider + 1
 	}
 
 	return true, nil
 }
 
 func compareBlock(
-	rule *string, ruleLeft, ruleSlider int, ruleArray bool,
-	scope *string, scopeLeft, scopeSlider int,
+	permission *string, permissionLeft, permissionSlider int, permissionArray bool,
+	action *string, actionLeft, actionSlider int,
 	vars map[string]string,
 ) (bool, error) {
-	if (*rule)[ruleLeft] == VariablePrefix {
-		key := (*rule)[ruleLeft+1 : ruleSlider]
+	if (*permission)[permissionLeft] == VariablePrefix {
+		key := (*permission)[permissionLeft+1 : permissionSlider]
 		varValue, found := vars[key]
 
 		if !found {
 			return false, fmt.Errorf(fmtAllowedVarNotFound, key)
 		}
 
-		return varValue == (*scope)[scopeLeft:scopeSlider], nil
+		return varValue == (*action)[actionLeft:actionSlider], nil
 	}
 
-	if ruleSlider-ruleLeft == 1 && (*rule)[ruleLeft] == Wildcard {
+	if permissionSlider-permissionLeft == 1 && (*permission)[permissionLeft] == Wildcard {
 		return true, nil
 	}
 
-	if ruleArray {
-		for ruleLeft < ruleSlider {
-			arrayRight := endOfArrayElement(rule, ruleLeft)
+	if permissionArray {
+		for permissionLeft < permissionSlider {
+			arrayRight := endOfArrayElement(permission, permissionLeft)
 
-			if (*rule)[ruleLeft] == VariablePrefix {
-				key := (*rule)[ruleLeft+1 : arrayRight]
+			if (*permission)[permissionLeft] == VariablePrefix {
+				key := (*permission)[permissionLeft+1 : arrayRight]
 				return false, fmt.Errorf(fmtAllowedVarInArray, key)
 			}
 
-			if (*rule)[ruleLeft] == Wildcard {
-				if arrayRight-ruleLeft > 1 && (*rule)[ruleLeft+1] == Wildcard {
+			if (*permission)[permissionLeft] == Wildcard {
+				if arrayRight-permissionLeft > 1 && (*permission)[permissionLeft+1] == Wildcard {
 					return false, errSuperInArray
 				}
 
 				return false, errWildcardInArray
 			}
 
-			if (*rule)[ruleLeft:arrayRight] == (*scope)[scopeLeft:scopeSlider] {
+			if (*permission)[permissionLeft:arrayRight] == (*action)[actionLeft:actionSlider] {
 				return true, nil
 			}
 
-			ruleLeft = arrayRight + 1
+			permissionLeft = arrayRight + 1
 		}
 
 		return false, nil
 	}
 
-	return (*rule)[ruleLeft:ruleSlider] == (*scope)[scopeLeft:scopeSlider], nil
+	return (*permission)[permissionLeft:permissionSlider] == (*action)[actionLeft:actionSlider], nil
+}
+
+func skipGrant(value *string, start int) (int, error) {
+	subStr := (*value)[start:]
+
+	if strings.HasPrefix(subStr, DenyGrant) {
+		return 5, nil
+	}
+
+	if strings.HasPrefix(subStr, AllowGrant) {
+		return 6, nil
+	}
+
+	return 0, errPermissionDoesNotStartWithGrant
 }
 
 func endOfBlock(value *string, start int, category string) (int, bool, error) {
@@ -310,13 +365,28 @@ func endOfBlock(value *string, start int, category string) (int, bool, error) {
 
 func endOfArrayElement(value *string, start int) int {
 	for i := start + 1; i < len(*value); i++ {
-		if (*value)[i] == BlockSeperator ||
-			(*value)[i] == ArraySeperator {
+		if (*value)[i] == BlockSeperator || (*value)[i] == ArraySeperator {
 			return i
 		}
 	}
 
 	return len(*value)
+}
+
+func isValidLiteral(char byte) bool {
+	if char >= 'a' && char <= 'z' {
+		return true
+	}
+
+	if char >= 'A' && char <= 'Z' {
+		return true
+	}
+
+	if char >= '0' && char <= '9' {
+		return true
+	}
+
+	return char == '_' || char == '-'
 }
 
 func isValidCharacter(char byte) bool {
