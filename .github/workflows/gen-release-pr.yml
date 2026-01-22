@@ -29,6 +29,10 @@ jobs:
           version: latest
           args: latest
 
+      - name: Trim Notes
+        run: |
+          tail -n +3 .changes/$(go run main.go latest).md > ${{ github.workspace }}/rel_notes.md
+
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v8
         with:
@@ -36,4 +40,4 @@ jobs:
           title: Release ${{ steps.latest.outputs.output }}
           branch: release/${{ steps.latest.outputs.output }}
           commit-message: Release ${{ steps.latest.outputs.output }}
-          body-path: ".changes/${{ steps.latest.outputs.output }}.md"
+          body-path: '${{ github.workspace }}/rel_notes.md'
