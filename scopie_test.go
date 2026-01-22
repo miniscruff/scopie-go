@@ -100,6 +100,7 @@ func Test_PermissionValid(t *testing.T) {
 	for _, scenario := range testCases.PermissionValidTests {
 		t.Run(scenario.ID, func(t *testing.T) {
 			t.Log(scenario.Permissions)
+
 			err := ValidatePermissions(scenario.Permissions...)
 			if scenario.Error == "" {
 				then.Nil(t, err)

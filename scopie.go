@@ -34,7 +34,9 @@ var (
 	errActionEmpty     = errors.New("scopie-106 in action: action was empty")
 	errPermissionEmpty = errors.New("scopie-106 in permission: permission was empty")
 
-	errPermissionDoesNotStartWithGrant = errors.New("scopie-107: permission does not start with a grant")
+	errPermissionDoesNotStartWithGrant = errors.New(
+		"scopie-107: permission does not start with a grant",
+	)
 
 	// validation specific
 	errValidateActionEmpty      = errors.New("scopie-106: action was empty")
@@ -47,10 +49,10 @@ var (
 type IsAllowedFunc func(map[string]string, string, string) (bool, error)
 
 // ValidateActionsFunc is a type wrapper for [ValidateActions] to be used as a dependency.
-type ValidateActionsFunc func (actions []string) error
+type ValidateActionsFunc func(actions []string) error
 
 // ValidateActionsFunc is a type wrapper for [ValidatePermissions] to be used as a dependency.
-type ValidatePermissionsFunc func (permissions []string) error
+type ValidatePermissionsFunc func(permissions []string) error
 
 // IsAllowed returns whether or not the user with the given permissions are allowed to complete
 // the action. See [Is Allowed Spec] for additional details.
@@ -148,7 +150,6 @@ func ValidateActions(actions ...string) error {
 	return nil
 }
 
-
 // ValidatePermissions checks whether or not the given permissions are valid given the
 // requirements outlined in the specification.
 // [Validate Permissions Spec] is the function specification.
@@ -188,7 +189,8 @@ func ValidatePermissions(permissions ...string) error {
 			}
 
 			if inArray {
-				if permission[i] == Wildcard && i < len(permission)-1 && permission[i+1] == Wildcard {
+				if permission[i] == Wildcard && i < len(permission)-1 &&
+					permission[i+1] == Wildcard {
 					return errSuperInArray
 				}
 
@@ -206,7 +208,8 @@ func ValidatePermissions(permissions ...string) error {
 				return fmt.Errorf(fmtValidateInvalidChar, string(permission[i]))
 			}
 
-			if permission[i] == Wildcard && i < len(permission)-1 && permission[i+1] == Wildcard && i < len(permission)-2 {
+			if permission[i] == Wildcard && i < len(permission)-1 && permission[i+1] == Wildcard &&
+				i < len(permission)-2 {
 				return errSuperNotLast
 			}
 		}
@@ -235,20 +238,34 @@ func comparePermissionToAction(
 			return false, err
 		}
 
-		permissionSlider, permissionArray, err := endOfBlock(permission, permissionLeft, "permission")
+		permissionSlider, permissionArray, err := endOfBlock(
+			permission,
+			permissionLeft,
+			"permission",
+		)
 		if err != nil {
 			return false, err
 		}
 
 		// Super wildcards are checked here as it skips the who rest of the checks.
-		if permissionSlider-permissionLeft == 2 && (*permission)[permissionLeft] == Wildcard && (*permission)[permissionLeft+1] == Wildcard {
+		if permissionSlider-permissionLeft == 2 && (*permission)[permissionLeft] == Wildcard &&
+			(*permission)[permissionLeft+1] == Wildcard {
 			if len(*permission) > permissionSlider {
 				return false, errSuperNotLast
 			}
 
 			return true, nil
 		} else {
-			match, err := compareBlock(permission, permissionLeft, permissionSlider, permissionArray, action, actionLeft, actionSlider, vars)
+			match, err := compareBlock(
+				permission,
+				permissionLeft,
+				permissionSlider,
+				permissionArray,
+				action,
+				actionLeft,
+				actionSlider,
+				vars,
+			)
 			if err != nil {
 				return false, err
 			}

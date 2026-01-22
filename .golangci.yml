@@ -8,7 +8,7 @@ linters:
     - goconst
     - goprintffuncname
     - gosec
-    - lll
+    - intrange
     - misspell
     - nakedret
     - noctx
@@ -18,7 +18,7 @@ linters:
     - unparam
     - usetesting
     - whitespace
-    - wsl
+    - wsl_v5
   settings:
     exhaustive:
       default-signifies-exhaustive: false
@@ -38,6 +38,10 @@ linters:
       - common-false-positives
       - legacy
       - std-error-handling
+    rules:
+      - linters:
+          - gosec
+        path: (.+)_test\.go
     paths:
       - third_party$
       - builtin$
@@ -46,6 +50,7 @@ formatters:
   enable:
     - gci
     - gofmt
+    - golines
   settings:
     gci:
       sections:
@@ -56,9 +61,6 @@ formatters:
         - dot
         - alias
         - localmodule
-    goimports:
-      local-prefixes:
-        - github.com/miniscruff/scopie-go
   exclusions:
     generated: lax
     paths:
