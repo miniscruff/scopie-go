@@ -30,7 +30,7 @@ jobs:
 
       - name: Trim Notes
         run: |
-          tail -n +3 .changes/$(go run main.go latest).md > ${{ github.workspace }}/rel_notes.md
+          tail -n +3 .changes/$(changie latest).md > ${{ github.workspace }}/rel_notes.md
 
       - name: Release
         uses: softprops/action-gh-release@v2
