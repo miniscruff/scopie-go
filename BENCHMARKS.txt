@@ -2,27 +2,27 @@ goos: linux
 goarch: amd64
 pkg: github.com/miniscruff/scopie-go
 cpu: AMD EPYC 7763 64-Core Processor                
-Benchmark_Validations/allow,1rules,1rule,1block1length-4         	 6574063	       181.8 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/deny,1rules,1rule,1block1length-4          	 6543046	       179.4 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/allow,5rules,3scopes,3blocks10length,best-4         	 2984340	       404.5 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/allow,5rules,3scopes,3blocks10length,worst-4        	 1293463	       928.0 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/deny,5rules,3scopes,3blocks10length,best-4          	 4278871	       280.0 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/deny,5rules,3scopes,3blocks10length,worst-4         	 1243476	       962.3 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/allow,2rules,1rule,3block5length,3array,best-4      	 4065012	       296.7 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/allow,2rules,1rule,3block5length,3array,worst-4     	 2786043	       430.8 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/deny,2rules,1rule,3block5length,3array,best-4       	 4030843	       297.6 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/deny,2rules,1rule,3block5length,3array,worst-4      	 2782814	       431.7 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/allow,3rules,1rule,3block5length,3variables,best-4  	 3859971	       310.8 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/allow,3rules,1rule,3block5length,3variables,worst-4 	 3045297	       391.6 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/deny,2rules,1rule,3block5length,3variables,best-4   	 4041121	       297.6 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/deny,2rules,1rule,3block5length,3variables,worst-4  	 3136351	       381.1 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/allow,3rules,1rule,3block5length,wildcard,best-4    	 4952082	       241.7 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/allow,3rules,1rule,3block5length,wildcard,worst-4   	 3811389	       329.4 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/deny,2rules,1rule,3block5length,wildcard,best-4     	 5234696	       228.9 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/deny,2rules,1rule,3block5length,wildcard,worst-4    	 3818515	       314.3 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/allow,3rules,1rule,3block5length,superwildcard,best-4         	 5410206	       221.4 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/allow,3rules,1rule,3block5length,superwildcard,worst-4        	 4204071	       288.6 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/deny,2rules,1rule,3block5length,superwildcard,best-4          	 5766709	       207.6 ns/op	       0 B/op	       0 allocs/op
-Benchmark_Validations/deny,2rules,1rule,3block5length,superwildcard,worst-4         	 4239048	       283.4 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Validations/allow,1permissions,1permission,1block1length-4         	 6497503	       184.8 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Validations/deny,1permissions,1permission,1block1length-4          	 6683601	       179.6 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Validations/allow,5permissions,3actions,3blocks10length,best-4     	 3096633	       385.3 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Validations/allow,5permissions,3actions,3blocks10length,worst-4    	 1360008	       882.4 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Validations/deny,5permissions,3actions,3blocks10length,best-4      	 4413885	       275.9 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Validations/deny,5permissions,3actions,3blocks10length,worst-4     	 1379466	       870.0 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Validations/allow,2permissions,1permission,3block5length,3array,best-4         	 3929665	       306.9 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Validations/allow,2permissions,1permission,3block5length,3array,worst-4        	 2738598	       438.1 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Validations/deny,2permissions,1permission,3block5length,3array,best-4          	 4207123	       284.3 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Validations/deny,2permissions,1permission,3block5length,3array,worst-4         	 2822498	       425.3 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Validations/allow,3permissions,1permission,3block5length,3variables,best-4     	 3958761	       302.8 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Validations/allow,3permissions,1permission,3block5length,3variables,worst-4    	 3186079	       376.9 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Validations/deny,2permissions,1permission,3block5length,3variables,best-4      	 4156200	       289.0 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Validations/deny,2permissions,1permission,3block5length,3variables,worst-4     	 3251246	       367.7 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Validations/allow,3permissions,1permission,3block5length,wildcard,best-4       	 5091860	       235.7 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Validations/allow,3permissions,1permission,3block5length,wildcard,worst-4      	 3775414	       319.7 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Validations/deny,2permissions,1permission,3block5length,wildcard,best-4        	 5474451	       219.1 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Validations/deny,2permissions,1permission,3block5length,wildcard,worst-4       	 3998163	       300.3 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Validations/allow,3permissions,1permission,3block5length,superwildcard,best-4  	 5452432	       219.9 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Validations/allow,3permissions,1permission,3block5length,superwildcard,worst-4 	 4175149	       288.2 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Validations/deny,2permissions,1permission,3block5length,superwildcard,best-4   	 5724993	       209.5 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Validations/deny,2permissions,1permission,3block5length,superwildcard,worst-4  	 4294388	       277.1 ns/op	       0 B/op	       0 allocs/op
 PASS
-ok  	github.com/miniscruff/scopie-go	26.442s
+ok  	github.com/miniscruff/scopie-go	26.423s
