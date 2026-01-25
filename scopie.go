@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	BlockSeperator = byte('/')
-	ArraySeperator = byte('|')
+	BlockSeparator = byte('/')
+	ArraySeparator = byte('|')
 	VariablePrefix = byte('@')
 	Wildcard       = byte('*')
 
@@ -137,7 +137,7 @@ func ValidateActions(actions ...string) error {
 		}
 
 		for i := range action {
-			if action[i] == BlockSeperator {
+			if action[i] == BlockSeparator {
 				continue
 			}
 
@@ -178,12 +178,12 @@ func ValidatePermissions(permissions ...string) error {
 		}
 
 		for ; i < len(permission); i++ {
-			if permission[i] == BlockSeperator {
+			if permission[i] == BlockSeparator {
 				inArray = false
 				continue
 			}
 
-			if permission[i] == ArraySeperator {
+			if permission[i] == ArraySeparator {
 				inArray = true
 				continue
 			}
@@ -350,9 +350,9 @@ func endOfBlock(value *string, start int, category string) (int, bool, error) {
 	isArray := false
 
 	for i := start; i < len(*value); i++ {
-		if (*value)[i] == ArraySeperator {
+		if (*value)[i] == ArraySeparator {
 			isArray = true
-		} else if (*value)[i] == BlockSeperator {
+		} else if (*value)[i] == BlockSeparator {
 			return i, isArray, nil
 		} else if !isValidCharacter((*value)[i]) {
 			invalidChar := string((*value)[i])
@@ -365,7 +365,7 @@ func endOfBlock(value *string, start int, category string) (int, bool, error) {
 
 func endOfArrayElement(value *string, start int) int {
 	for i := start + 1; i < len(*value); i++ {
-		if (*value)[i] == BlockSeperator || (*value)[i] == ArraySeperator {
+		if (*value)[i] == BlockSeparator || (*value)[i] == ArraySeparator {
 			return i
 		}
 	}
