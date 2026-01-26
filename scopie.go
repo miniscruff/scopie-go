@@ -172,7 +172,7 @@ func ValidatePermissions(permissions ...string) error {
 
 		inArray := false
 
-		i, err := skipGrant(&permission, 0)
+		i, err := skipGrant(&permission)
 		if err != nil {
 			return errPermissionDoesNotStartWithGrant
 		}
@@ -224,7 +224,7 @@ func comparePermissionToAction(
 	vars map[string]string,
 ) (bool, error) {
 	// skip grant error is pre-checked
-	permissionLeft, _ := skipGrant(permission, 0)
+	permissionLeft, _ := skipGrant(permission)
 	actionLeft := 0
 
 	for permissionLeft < len(*permission) || actionLeft < len(*action) {
@@ -332,14 +332,12 @@ func compareBlock(
 	return (*permission)[permissionLeft:permissionSlider] == (*action)[actionLeft:actionSlider], nil
 }
 
-func skipGrant(value *string, start int) (int, error) {
-	subStr := (*value)[start:]
-
-	if strings.HasPrefix(subStr, DenyGrant) {
+func skipGrant(value *string) (int, error) {
+	if strings.HasPrefix(*value, DenyGrant) {
 		return 5, nil
 	}
 
-	if strings.HasPrefix(subStr, AllowGrant) {
+	if strings.HasPrefix(*value, AllowGrant) {
 		return 6, nil
 	}
 
