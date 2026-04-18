@@ -23,7 +23,7 @@ jobs:
 
       - name: Get the latest version
         id: latest
-        uses: miniscruff/changie-action@v2
+        uses: miniscruff/changie-action@v3
         with:
           version: latest
           args: latest
@@ -33,7 +33,7 @@ jobs:
           tail -n +3 .changes/$(changie latest).md > ${{ github.workspace }}/rel_notes.md
 
       - name: Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           body_path: "${{ github.workspace }}/rel_notes.md"
           tag_name: "${{ steps.latest.outputs.output }}"
